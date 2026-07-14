@@ -73,7 +73,7 @@ Name = 🏃 Name
 [DE] Name = 🇩🇪 Name
 [Google.com] Name = 🌐 Name (where 🌐 is the Google Logo)
 ```
-
+![Runner Naming](screenshots/runner_naming.png)
 
 ## ☕ Support & Contact
 
@@ -81,4 +81,4 @@ This project is developed with passion. (by AI) If you find it useful, I would b
 
 ## 📷 Screenshots
 
-![Main Pqge](screenshots/main_page.png)
+![Main Page](screenshots/main_page.png)
