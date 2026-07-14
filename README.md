@@ -1,11 +1,11 @@
-# Timr
+
+
+
+# ⏱️ time - Timing & Leaderboard System
+
 HTML based Timing App for Sports and Other Activities. Coded heavily with AI and some (very few lines) of own Code.
 
-
-
-# ⏱️ Timing & Leaderboard System
-
-A high-performance, lightweight web application for precise timing, specially developed for sports events, scout gatherings, and first-aid competitions.
+A high-performance, lightweight web application for precise timing, specially developed for sports events, scout gatherings, and other competitions.
 
 ## 🚀 Features
 
