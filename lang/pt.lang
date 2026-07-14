@@ -52,6 +52,8 @@
   "lblCoffeeText": "Pague-me um café",
   "lblGithubText": "Ver no GitHub",
   "lblSaveBtnText": "Salvar corrida",
-  "lblNewBtnPlaceholder": "ex: Obst�culo superado",
+  "lblNewBtnPlaceholder": "ex: Obstáculo superado",
+  "lblDeleteAllData": "🗑️ Excluir todos os dados",
+  "lblConfirmDeleteAll": "Aviso: Isso excluirá todas as corridas, eventos e configurações. Prosseguir?",
   "lblEmptyLeaderboard": "Nenhuma corrida registrada."
 }

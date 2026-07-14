@@ -53,6 +53,8 @@
   "lblGithubText": "Auf GitHub ansehen",
   "lblSaveBtnText": "Lauf Speichern",
   "lblNewBtnPlaceholder": "z.B. Hindernis übersprungen",
+  "lblDeleteAllData": "🗑️ Alle Daten löschen",
+  "lblConfirmDeleteAll": "Warnung: Dies löscht alle Läufe, Events und Einstellungen. Wirklich fortfahren?",
   "lblEmptyLeaderboard": "Noch keine Läufe registriert."
 
 }

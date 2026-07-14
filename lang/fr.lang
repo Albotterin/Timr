@@ -53,5 +53,7 @@
   "lblGithubText": "Voir sur GitHub",
   "lblSaveBtnText": "Enregistrer la course",
   "lblNewBtnPlaceholder": "ex: Obstacle franchi",
+  "lblDeleteAllData": "🗑️ Supprimer toutes les données",
+  "lblConfirmDeleteAll": "Attention : Cela supprimera toutes les courses, événements et paramètres. Continuer ?",
   "lblEmptyLeaderboard": "Aucune course enregistrée pour le moment."
 }

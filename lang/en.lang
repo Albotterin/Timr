@@ -52,6 +52,8 @@
   "lblCoffeeText": "Buy me a coffee",
   "lblGithubText": "View on GitHub",
   "lblSaveBtnText": "Save Run",
-  "lblNewBtnPlaceholder": "e.g. Obstacle skipped",
+  "lblNewBtnPlaceholder": "e.g. Obstacle Skipper",
+  "lblDeleteAllData": "🗑️ Delete all data",
+  "lblConfirmDeleteAll": "Warning: This will delete all runs, events, and settings. Proceed?",
   "lblEmptyLeaderboard": "No runs registered yet."
 }

@@ -52,5 +52,7 @@
   "lblCoffeeText": "Qahfe' tI'",
   "lblGithubText": "GitHub yIlegh",
   "lblNewBtnPlaceholder": "rur: botjan luyaw",
+  "lblDeleteAllData": "🗑️ Hoch data chenpu'mo'",
+  "lblConfirmDeleteAll": "Qoylu': Hoch run, event, vI'chenmoHghach 'oHvaD neH. Su'qa'?",
   "lblSaveBtnText": "chuq yIghoH"
 }

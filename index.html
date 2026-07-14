@@ -39,6 +39,15 @@
                             <!-- Optionen werden via JS befüllt -->
                         </select>
                     </div>
+                    <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 5px 0;">
+                    <button id="lblDeleteAllData" style="color: var(--danger);" onclick="deleteAllAppData()">
+                        🗑️ Alle Daten löschen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
                 </div>
             </div>
         </div>
@@ -1015,6 +1024,17 @@
         function exportToPDF() { if (runs.length === 0) return; const reset = prepareExportStyles(); setTimeout(() => { html2pdf().set({ margin: 15, filename: `Bestenliste_${currentEvent.replace(/[^a-z0-9]/gi, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: false, logging: false }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.getElementById('leaderboardCard')).save().then(reset).catch(reset); }, 150); }
         async function shareAsImage() { if (runs.length === 0) return; const reset = prepareExportStyles(); try { setTimeout(async () => { const canvas = await html2canvas(document.getElementById('leaderboardCard'), { scale: 2, backgroundColor: '#ffffff', useCORS: false }); reset(); canvas.toBlob(async (blob) => { const file = new File([blob], 'bestenliste.png', { type: 'image/png' }); if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Ergebnisse' }); else { const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'Bestenliste.png'; a.click(); } }); }, 150); } catch { reset(); } }
         function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
-    </script>
+  
+        function deleteAllAppData() {
+    const confirmation = confirm(translations['lblConfirmDeleteAll'] || "Wirklich alle Daten löschen?");
+    if (confirmation) {
+        localStorage.clear();
+        // Kurze Verzögerung für den Nutzer, dann Neuladen
+        location.reload();
+    }
+}
+
+        
+        </script>
 </body>
 </html>

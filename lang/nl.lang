@@ -53,5 +53,7 @@
   "lblGithubText": "Bekijk op GitHub",
   "lblSaveBtnText": "Loop opslaan",
   "lblNewBtnPlaceholder": "bijv. Hindernis overgeslagen",
+  "lblDeleteAllData": "🗑️ Alle gegevens verwijderen",
+  "lblConfirmDeleteAll": "Waarschuwing: Dit verwijdert alle lopen, evenementen en instellingen. Doorgaan?",
   "lblEmptyLeaderboard": "Nog geen lopen geregistreerd."
 }
