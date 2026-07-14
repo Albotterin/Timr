@@ -508,9 +508,13 @@
             
             fetch('Changelog.info')
                 .then(res => { if (!res.ok) throw new Error(); return res.text(); })
-                .then(text => { contentEl.innerText = text.trim(); })
+                .then(text => { 
+                    // Invertierung: Letzte Zeile zuerst
+                    contentEl.innerText = text.split('\n').reverse().join('\n').trim(); 
+                })
                 .catch(() => { contentEl.innerText = translations['lblChangelogError'] || "Error loading Changelog."; });
         }
+        
         function closeChangelogModal() { document.getElementById('changelogModal').style.display = 'none'; }
         function closeChangelogModalOnOutsideClick(e) { if(e.target.id === 'changelogModal') closeChangelogModal(); }
 
@@ -951,8 +955,25 @@
             cardHeader.style.display = 'none'; pdfEventTitle.style.display = 'block'; element.classList.add('pdf-export-mode');
             sortAndDisplayRuns(true);
 
+            // Watermark Logik
+            let watermarkText = "";
+            fetch('whitelabel.info').then(res => res.text()).then(text => {
+                const lines = text.split('\n');
+                lines.forEach(line => {
+                    if (line.startsWith('watermark=')) watermarkText = line.replace('watermark=', '').trim();
+                });
+                if (watermarkText && !document.getElementById('exportWatermark')) {
+                    const wm = document.createElement('div');
+                    wm.id = 'exportWatermark';
+                    wm.style.cssText = 'margin-top:20px; font-size:0.7rem; color:#888; text-align:center; border-top:1px solid #ccc; padding-top:5px;';
+                    wm.innerText = watermarkText;
+                    element.appendChild(wm);
+                }
+            });
+
             return () => { 
                 cardHeader.style.display = 'flex'; pdfEventTitle.style.display = 'none'; element.classList.remove('pdf-export-mode'); 
+                const wm = document.getElementById('exportWatermark'); if(wm) wm.remove();
                 sortAndDisplayRuns(false);
             };
         }
