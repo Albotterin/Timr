@@ -53,9 +53,9 @@ The system is designed for flexibility and can be tailored to match specific eve
 
 ```text
 Title=YourEvent Name
-URL=[https://your-website.com](https://your-website.com)
-coffee=[https://buymeacoffee.com/your-link](https://buymeacoffee.com/your-link)
-github=[https://github.com/your-repository](https://github.com/your-repository)
+URL=https://your-website.com/timr
+coffee=Link to Donate to the project
+github=https://github.com/your-repository
 ```
 
 
