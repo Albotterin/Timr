@@ -65,8 +65,15 @@ github=https://github.com/your-repository
 * By Adding [] as a prefix the symbol can be customized
 
 * By putting an emoji in the middle this will be the symbol
-* By puttin a ccontry code in the middle this will be the symbol
+* By puttin a country code in the middle this will be the symbol
 * By putting a Domain in the middle, the favicon will be the symbol
+
+```text
+Name = 🏃
+[❤️] Name = ❤️ Name
+[DE] Name = 🇩🇪 Name
+[Google.com] Name = 🌐 Name (where 🌐 is the Google Logo)
+```
 
 
 ## ☕ Support & Contact
