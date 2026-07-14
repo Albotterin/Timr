@@ -7,6 +7,8 @@ HTML based Timing App for Sports and Other Activities. Coded heavily with AI and
 
 A high-performance, lightweight web application for precise timing, specially developed for sports events, scout gatherings, and other competitions.
 
+A hosted version can be found here: https://timer.mrwoelfel.eu/
+
 ## 🏕️ How it all begun
 I am a scout leader from Vienna/Austria. For our summer camp 2026 I prepeared a short obstacle course with some challenges in between. Before the start I asked if anyone knew an app for timing challanges which allows you to add bonus seconds and penalties. No one knew of such an app and instead of just timing the course with the normal timer app on my phone I quickly promted Gemini to show me some code for such an app. It instantly worked and we used it to track the course. Over time I thought of more and more features and kept promting Gemini to implement them. Well and the result of this madness is....this repo. 
 
