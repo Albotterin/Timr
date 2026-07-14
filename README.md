@@ -1,5 +1,5 @@
 
-# ⏱️ time - Timing & Leaderboard System
+# ⏱️ timr - Timing & Leaderboard System
 
 HTML based Timing App for Sports and Other Activities. Coded heavily with AI and some (very few lines) of own Code.
 
