@@ -78,3 +78,7 @@ Name = 🏃 Name
 ## ☕ Support & Contact
 
 This project is developed with passion. (by AI) If you find it useful, I would be honored to receive your feedback or support on GitHub!
+
+## 📷 Screenshots
+
+![Main Pqge](screenshots/main_page.png)
