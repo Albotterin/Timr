@@ -1,6 +1,4 @@
 
-
-
 # ⏱️ time - Timing & Leaderboard System
 
 HTML based Timing App for Sports and Other Activities. Coded heavily with AI and some (very few lines) of own Code.
@@ -43,6 +41,23 @@ I am a scout leader from Vienna/Austria. For our summer camp 2026 I prepeared a 
 2. Add the language code (e.g., `fr`) to the `available` array in your `lang.info` file.
 3. Follow the structure of the `de.lang` or `en.lang` files to define your translations.
 
+## 🎨 Whitelabeling & Customization
+
+The system is designed for flexibility and can be tailored to match specific event identities. You can configure core visual and functional aspects through the `whitelabel.info` file:
+
+* **Custom Title:** Set a unique application name via the `Title` parameter.
+* **Branding URL:** Define a primary website URL that users will be redirected to when clicking the header title.
+* **Support Integration:** Easily toggle and configure external links for "Buy me a Coffee" and "GitHub" integration by defining their respective URLs. 
+
+*Configuration example in `whitelabel.info`:*
+
+```text
+Title=YourEvent Name
+URL=[https://your-website.com](https://your-website.com)
+coffee=[https://buymeacoffee.com/your-link](https://buymeacoffee.com/your-link)
+github=[https://github.com/your-repository](https://github.com/your-repository)
+
+
 ## ☕ Support & Contact
 
-This project is developed with passion. If you find it useful, I would be honored to receive your feedback or support on GitHub!
+This project is developed with passion. (by AI) If you find it useful, I would be honored to receive your feedback or support on GitHub!
