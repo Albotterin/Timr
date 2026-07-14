@@ -63,9 +63,9 @@ github=https://github.com/your-repository
 
 * Runners in the Leaderboard default to the 🏃 Symbol.
   * By Adding [] as a prefix the symbol can be customized
-   * By putting an emoji in the middle this will be the symbol
-   * By puttin a country code in the middle this will be the symbol
-   * By putting a Domain in the middle, the favicon will be the symbol
+     * By putting an emoji in the middle this will be the symbol
+     * By puttin a country code in the middle this will be the symbol
+     * By putting a Domain in the middle, the favicon will be the symbol
 
 ```text
 Name = 🏃Name
