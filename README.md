@@ -56,6 +56,7 @@ Title=YourEvent Name
 URL=[https://your-website.com](https://your-website.com)
 coffee=[https://buymeacoffee.com/your-link](https://buymeacoffee.com/your-link)
 github=[https://github.com/your-repository](https://github.com/your-repository)
+```
 
 
 ## ☕ Support & Contact
