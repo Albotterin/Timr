@@ -69,7 +69,7 @@ github=https://github.com/your-repository
 * By putting a Domain in the middle, the favicon will be the symbol
 
 ```text
-Name = 🏃
+Name = 🏃Name
 [❤️] Name = ❤️ Name
 [DE] Name = 🇩🇪 Name
 [Google.com] Name = 🌐 Name (where 🌐 is the Google Logo)
