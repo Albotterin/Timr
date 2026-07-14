@@ -52,5 +52,6 @@
   "lblCoffeeText": "Offrez-moi un café",
   "lblGithubText": "Voir sur GitHub",
   "lblSaveBtnText": "Enregistrer la course",
+  "lblNewBtnPlaceholder": "ex: Obstacle franchi",
   "lblEmptyLeaderboard": "Aucune course enregistrée pour le moment."
 }

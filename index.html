@@ -865,7 +865,16 @@
 
         function initTheme() { const saved = localStorage.getItem('theme') || 'light'; document.documentElement.setAttribute('data-theme', saved); document.getElementById('themeIcon').innerText = saved === 'dark' ? "☀️" : "🌙"; document.getElementById('themeText').innerText = saved === 'dark' ? "Light Mode" : "Dark Mode"; syncPopupTheme(); }
         function toggleTheme() { const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', newTheme); localStorage.setItem('theme', newTheme); initTheme(); }
-        function openModal(mode) { if (lockedEvents.includes(currentEvent)) return; currentModalMode = mode; document.getElementById('modalTitle').innerText = mode === 'add_btn_penalty' ? (translations['lblNewBtnName'] || "Name:") : (translations['lblNewBtnName'] || "Name:"); document.getElementById('customModal').style.display = 'flex'; document.getElementById('newBtnName').focus(); }
+ 
+        function openModal(mode) {
+        if (lockedEvents.includes(currentEvent)) return; 
+        currentModalMode = mode; 
+        document.getElementById('modalTitle').innerText = mode === 'add_btn_penalty' ? (translations['lblNewBtnName'] || "Name:") : (translations['lblNewBtnName'] || "Name:");
+        document.getElementById('newBtnName').placeholder = translations['lblNewBtnPlaceholder'] || "Name...";
+        document.getElementById('customModal').style.display = 'flex';
+        document.getElementById('newBtnName').focus();
+        }
+        
         function closeModal() { document.getElementById('customModal').style.display = 'none'; document.getElementById('newBtnName').value = ''; document.getElementById('newBtnSeconds').value = ''; }
         function createNewButton() { const name = document.getElementById('newBtnName').value.trim(), secs = parseInt(document.getElementById('newBtnSeconds').value, 10); if (!name) { alert(translations['lblEnterRunnerName'] || "Bitte Namen eingeben."); return; } if (isNaN(secs) || secs <= 0) { alert("Ungültige Zeit."); return; } if (currentModalMode === 'add_btn_penalty') { penaltyTypes.push({id: Date.now(), name: `${name} (+${secs}s)`, seconds: secs}); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes.push({id: Date.now(), name: `${name} (-${secs}s)`, seconds: secs}); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } closeModal(); renderGroupRunners(); }
         function deleteCustomType(id, mode, e) { e.stopPropagation(); if (mode === 'penalty') { penaltyTypes = penaltyTypes.filter(p => p.id !== id); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes = bonusTypes.filter(b => b.id !== id); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } renderGroupRunners(); }

@@ -52,6 +52,7 @@
   "lblCoffeeText": "Kaffee spendieren",
   "lblGithubText": "Auf GitHub ansehen",
   "lblSaveBtnText": "Lauf Speichern",
+  "lblNewBtnPlaceholder": "z.B. Hindernis übersprungen",
   "lblEmptyLeaderboard": "Noch keine Läufe registriert."
 
 }

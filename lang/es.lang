@@ -52,5 +52,6 @@
   "lblCoffeeText": "Invítame a un café",
   "lblGithubText": "Ver en GitHub",
   "lblSaveBtnText": "Guardar carrera",
+  "lblNewBtnPlaceholder": "ej. Obst�culo superado",
   "lblEmptyLeaderboard": "No hay carreras registradas."
 }

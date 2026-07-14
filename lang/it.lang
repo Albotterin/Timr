@@ -52,5 +52,6 @@
   "lblCoffeeText": "Offrimi un caffè",
   "lblGithubText": "Vedi su GitHub",
   "lblSaveBtnText": "Salva corsa",
+  "lblNewBtnPlaceholder": "es. Ostacolo superato",
   "lblEmptyLeaderboard": "Nessuna corsa registrata."
 }

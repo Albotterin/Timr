@@ -52,5 +52,6 @@
   "lblCoffeeText": "Koop een koffie",
   "lblGithubText": "Bekijk op GitHub",
   "lblSaveBtnText": "Loop opslaan",
+  "lblNewBtnPlaceholder": "bijv. Hindernis overgeslagen",
   "lblEmptyLeaderboard": "Nog geen lopen geregistreerd."
 }

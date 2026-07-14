@@ -52,5 +52,6 @@
   "lblCoffeeText": "Buy me a coffee",
   "lblGithubText": "View on GitHub",
   "lblSaveBtnText": "Save Run",
+  "lblNewBtnPlaceholder": "e.g. Obstacle skipped",
   "lblEmptyLeaderboard": "No runs registered yet."
 }
