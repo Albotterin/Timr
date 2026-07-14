@@ -79,18 +79,25 @@
             gap: 10px;
         }
 
-        .lang-btn {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 2px;
-            border-radius: 50%;
-            transition: transform 0.1s, filter 0.2s;
-            filter: grayscale(40%);
+        .lang-dropdown-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-color);
+            padding: 10px 16px;
         }
-        .lang-btn:hover { transform: scale(1.1); filter: grayscale(0%); }
-        .lang-btn.active { filter: grayscale(0%); transform: scale(1.15); font-weight: bold; }
+
+        .lang-select-dropdown {
+            padding: 6px 10px;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--card-bg);
+            color: var(--text);
+            cursor: pointer;
+            outline: none;
+            max-width: 120px;
+        }
 
         .theme-toggle-btn {
             background: var(--card-bg); border: 2px solid var(--border-color); color: var(--text);
@@ -132,7 +139,7 @@
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content { 
             display: none; position: absolute; right: 0; top: 100%; background-color: var(--card-bg); 
-            min-width: 180px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.15); border: 1px solid var(--border-color);
+            min-width: 220px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.15); border: 1px solid var(--border-color);
             border-radius: 6px; z-index: 10; overflow: hidden; margin-top: 5px;
         }
         .dropdown-content button, .dropdown-content a { 
@@ -142,11 +149,6 @@
         }
         .dropdown-content button:hover, .dropdown-content a:hover { background-color: var(--item-hover); }
         .dropdown:hover .dropdown-content { display: block; }
-
-        .dropdown-content .menu-label-row {
-            display: flex; justify-content: space-between; align-items: center;
-            border-top: 1px solid var(--border-color); padding: 10px 16px; font-size: 0.85rem; font-weight: 600; color: var(--text-light);
-        }
 
         .btn-action-header { color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.2s; }
         .btn-action-header:hover { opacity: 0.9; }
@@ -271,30 +273,23 @@
     <div class="top-bar">
         <a id="whitelabelTitle" class="whitelabel-title">⏱️ Zeitmessung</a>
         <div class="top-bar-actions">
-            <!-- Vereintes Einstellungs-Dropdown -->
             <div class="dropdown">
                 <button id="lblSettingsDropdown" class="theme-toggle-btn">⚙️ <span id="lblSettingsText">Optionen</span></button>
                 <div class="dropdown-content">
-                    <!-- Buy me a Coffee -->
                     <a href="#" id="coffeeLink" style="display: none; align-items: center; gap: 8px;" target="_blank">
                         <span>☕</span> <span id="lblCoffeeText">Kaffee spendieren</span>
                     </a>
-                    <!-- GitHub Link -->
                     <a href="#" id="githubLink" style="display: none; align-items: center; gap: 8px;" target="_blank">
                         <svg height="16" width="16" viewBox="0 0 16 16" style="fill: currentColor; flex-shrink: 0;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
                         <span id="lblGithubText">Auf GitHub ansehen</span>
                     </a>
-                    <!-- Light/Dark Mode Toggle -->
                     <button id="themeToggleBtn" onclick="toggleTheme()">
                         <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
                     </button>
-                    <!-- Sprachauswahl -->
-                    <div class="menu-label-row">
-                        <span id="lblLanguage">Sprache:</span>
-                        <div style="display: flex; gap: 5px;">
-                            <button id="langBtnDe" class="lang-btn active" onclick="setLanguage('de')" title="Deutsch">🇩🇪</button>
-                            <button id="langBtnEn" class="lang-btn" onclick="setLanguage('en')" title="English">🇬🇧</button>
-                        </div>
+                    <div class="lang-dropdown-row">
+                        <span id="lblLanguage">🌐 Sprache:</span>
+                        <select id="langSelect" class="lang-select-dropdown" onchange="setLanguage(this.value)">
+                            </select>
                     </div>
                 </div>
             </div>
@@ -304,7 +299,6 @@
     <input type="file" id="jsonImportInput" accept=".json" style="display: none;" onchange="importJSONData(event)">
 
     <div class="container">
-        <!-- Event-Bereich -->
         <div class="card event-setting">
             <div class="event-management-block">
                 <select id="eventSelect" class="event-select" onchange="handleEventSelectChange()"></select>
@@ -316,7 +310,6 @@
             </div>
         </div>
         
-        <!-- Bereich 1: Bestenliste -->
         <div class="card" id="leaderboardCard">
             <h1 id="pdfEventTitle">Bestenliste</h1>
             <div class="card-header-container" id="cardHeader">
@@ -340,7 +333,6 @@
                 </div>
             </div>
 
-            <!-- Kopfzeile für die Tabelle -->
             <div class="leaderboard-header" id="leaderboardHeader" style="display:none;">
                 <div class="header-pos" id="lblHeaderPos">Pos.</div>
                 <div class="header-name" id="lblHeaderName">Name</div>
@@ -350,14 +342,12 @@
             <ol id="leaderboard" class="leaderboard-list"></ol>
         </div>
 
-        <!-- Bereich 2: Zeitmessung -->
         <div class="card" id="timingCard">
             <div class="tabs-container">
                 <button id="tabSingleBtn" class="tab-btn active" onclick="switchTab('single')">👤 Einzelläufer</button>
                 <button id="tabGroupBtn" class="tab-btn" onclick="switchTab('group')">👥 Gruppenlauf</button>
             </div>
             
-            <!-- TAB: Einzelläufer -->
             <div id="tabSingleContent" class="tab-content active">
                 <div class="form-group">
                     <label id="lblRunnerName" for="runnerName">Name des Läufers:</label>
@@ -398,7 +388,6 @@
                 </div>
             </div>
 
-            <!-- TAB: Gruppenlauf -->
             <div id="tabGroupContent" class="tab-content">
                 <div class="form-group" id="groupSetupForm">
                     <label id="lblGroupRunnerAdd" for="groupRunnerInput">Läufer zur Gruppe hinzufügen:</label>
@@ -419,13 +408,11 @@
         </div>
     </div>
 
-    <!-- Footer mit Versionsnummer und Changelog-Link -->
     <footer class="app-footer">
         <span id="appFooter">Version: Lädt...</span>
         <a id="lblChangelogLink" class="changelog-link" onclick="openChangelogModal()">Changelog</a>
     </footer>
 
-    <!-- Modals -->
     <div id="customModal" class="custom-modal">
         <div class="modal-content">
             <h3 id="modalTitle" style="margin-top:0;">Neuen Button anlegen</h3>
@@ -458,7 +445,6 @@
         </div>
     </div>
 
-    <!-- Changelog Fenster -->
     <div id="changelogModal" class="custom-modal" onclick="closeChangelogModalOnOutsideClick(event)">
         <div class="modal-content">
             <h3 style="margin-top:0; color: var(--primary);">📋 Changelog</h3>
@@ -531,122 +517,19 @@
         
         let currentEvent = 'Standardlauf'; let eventList = ['Standardlauf']; let runs = []; let lockedEvents = []; let activeTab = 'single';
         let groupRunners = []; let groupInterval = null;
-        let currentLanguage = 'de';
         let whitelabelUrl = '';
 
         let penaltyTypes = JSON.parse(localStorage.getItem('runnerPenaltyTypes')) || [];
         let bonusTypes = JSON.parse(localStorage.getItem('runnerBonusTypes')) || [];
 
-        const translations = {
-            de: {
-                lblLeaderboardTitle: "🏆 Bestenliste",
-                lblExportDropdown: "📤 Export",
-                lblPdfSave: "PDF speichern",
-                lblImageShare: "Bild teilen/speichern",
-                lblLinkExport: "Link kopieren",
-                lblDataDropdown: "💾 Daten",
-                lblJsonExport: "Export (JSON)",
-                lblJsonImport: "Import (JSON)",
-                lblHeaderPos: "Pos.",
-                lblHeaderName: "Name",
-                lblHeaderTime: "Zeit",
-                tabSingleBtn: "👤 Einzelläufer",
-                tabGroupBtn: "👥 Gruppenlauf",
-                lblRunnerName: "Name des Läufers:",
-                lblPenaltySection: "Strafsekunden hinzufügen (+):",
-                lblBonusSection: "Bonuszeit abziehen (-):",
-                lblSpecialStatusSection: "Spezial-Status setzen:",
-                lblGroupRunnerAdd: "Läufer zur Gruppe hinzufügen:",
-                lblGroupAddBtn: "Hinzufügen",
-                groupRunnerInputPlaceholder: "Name eingeben...",
-                runnerNamePlaceholder: "z.B. Max Mustermann",
-                lblScreenPopupBtn: "📺 Leinwand-Ansicht öffnen",
-                lblChangelogLink: "Changelog",
-                lblNewBtnName: "Bezeichnung / Name:",
-                lblNewBtnSeconds: "Zeit (in Sekunden):",
-                lblModalCancel: "Abbrechen",
-                lblModalCreate: "Erstellen",
-                lblEventModalTitle: "Neuen Lauf (Event) anlegen",
-                lblNewEventName: "Name des Events:",
-                lblEventModalCancel: "Abbrechen",
-                lblEventModalCreate: "Anlegen",
-                lblChangelogClose: "Schließen",
-                lblEditModalTitle: "Eintrag bearbeiten",
-                lblEditRunnerName: "Name des Läufers:",
-                lblEditStatus: "Status:",
-                lblEditDuration: "Reine Laufzeit:",
-                lblEditPenaltyCount: "Anzahl Strafen:",
-                lblEditPenaltyTime: "Strafzeit Gesamt (Sekunden):",
-                lblEditBonusCount: "Anzahl Boni:",
-                lblEditBonusTime: "Bonuszeit Gesamt (Sekunden):",
-                lblEditModalCancel: "Abbrechen",
-                lblEditModalSave: "Speichern",
-                lblStandardRun: "🏁 Standardlauf",
-                lblLobbyReady: "Bereit...",
-                lblLobbyLocked: "Gesperrt",
-                lblTimerBlocked: "GEBLOCKT",
-                lblSettingsText: "Optionen",
-                lblLanguage: "Sprache:",
-                lblCoffeeText: "Kaffee spendieren",
-                lblGithubText: "Auf GitHub ansehen",
-                lblSaveBtnText: "Lauf Speichern"
-            },
-            en: {
-                lblLeaderboardTitle: "🏆 Leaderboard",
-                lblExportDropdown: "📤 Export",
-                lblPdfSave: "Save PDF",
-                lblImageShare: "Share/Save Image",
-                lblLinkExport: "Copy Link",
-                lblDataDropdown: "💾 Data",
-                lblJsonExport: "Export (JSON)",
-                lblJsonImport: "Import (JSON)",
-                lblHeaderPos: "Pos.",
-                lblHeaderName: "Name",
-                lblHeaderTime: "Time",
-                tabSingleBtn: "👤 Single Runner",
-                tabGroupBtn: "👥 Group Run",
-                lblRunnerName: "Runner Name:",
-                lblPenaltySection: "Add Penalties (+):",
-                lblBonusSection: "Subtract Bonus Time (-):",
-                lblSpecialStatusSection: "Set Special Status:",
-                lblGroupRunnerAdd: "Add Runner to Group:",
-                lblGroupAddBtn: "Add",
-                groupRunnerInputPlaceholder: "Enter name...",
-                runnerNamePlaceholder: "e.g. John Doe",
-                lblScreenPopupBtn: "📺 Open Screen View",
-                lblChangelogLink: "Changelog",
-                lblNewBtnName: "Description / Name:",
-                lblNewBtnSeconds: "Time (in seconds):",
-                lblModalCancel: "Cancel",
-                lblModalCreate: "Create",
-                lblEventModalTitle: "Create New Run (Event)",
-                lblNewEventName: "Event Name:",
-                lblEventModalCancel: "Cancel",
-                lblEventModalCreate: "Create",
-                lblChangelogClose: "Close",
-                lblEditModalTitle: "Edit Entry",
-                lblEditRunnerName: "Runner Name:",
-                lblEditStatus: "Status:",
-                lblEditDuration: "Pure Running Time:",
-                lblEditPenaltyCount: "Penalty Count:",
-                lblEditPenaltyTime: "Total Penalty Time (Seconds):",
-                lblEditBonusCount: "Bonus Count:",
-                lblEditBonusTime: "Total Bonus Time (Seconds):",
-                lblEditModalCancel: "Cancel",
-                lblEditModalSave: "Save",
-                lblStandardRun: "🏁 Standard Run",
-                lblLobbyReady: "Ready...",
-                lblLobbyLocked: "Locked",
-                lblTimerBlocked: "BLOCKED",
-                lblSettingsText: "Options",
-                lblLanguage: "Language:",
-                lblCoffeeText: "Buy me a coffee",
-                lblGithubText: "View on GitHub",
-                lblSaveBtnText: "Save Run"
-            }
-        };
+        // Dynamische Sprachenverwaltung
+        let availableLanguages = [];
+        let defaultLanguage = 'de';
+        let loadedLanguagesData = {}; 
+        let currentLanguage = 'de';
+        let translations = {}; 
 
-        // Alchemistische Kompressions-Helfer mittels nativer Browser-Streams (Deflate)
+        // Kompressions-Helfer mittels nativer Browser-Streams (Deflate)
         async function compressToBlobB64(str) {
             const stream = new Blob([str]).stream();
             const compressedStream = stream.pipeThrough(new CompressionStream("deflate"));
@@ -740,18 +623,74 @@
             return { eventName, isLocked, runs: importedRuns };
         }
 
-        window.onload = function() {
+        window.onload = async function() {
             eventList = JSON.parse(localStorage.getItem('runnerEventList')) || ['Standardlauf'];
             currentEvent = localStorage.getItem('runnerCurrentEventName') || 'Standardlauf';
             lockedEvents = JSON.parse(localStorage.getItem('runnerLockedEvents')) || [];
-            currentLanguage = localStorage.getItem('runnerLanguage') || 'de';
             
+            await initLanguages();
             buildEventSelectMenu(); loadRunsForCurrentEvent(); renderCustomButtons('penalty'); renderCustomButtons('bonus'); initTheme(); resetForm(); loadVersionInfo(); loadWhitelabelInfo();
-            setLanguage(currentLanguage);
             checkUrlImport();
         };
 
         window.onunload = function() { if (popupWindow) popupWindow.close(); };
+
+        // Lädt die lang.info und anschließend die Sprachdateien
+        async function initLanguages() {
+            try {
+                const infoRes = await fetch('lang.info');
+                if (!infoRes.ok) throw new Error("lang.info konnte nicht geladen werden.");
+                const langInfo = await infoRes.json();
+                
+                availableLanguages = langInfo.available || ['de', 'en'];
+                defaultLanguage = langInfo.default || 'de';
+            } catch (e) {
+                console.warn("Nutze Fallback-Sprachen, da lang.info fehlt oder blockiert wurde:", e);
+                availableLanguages = ['de', 'en'];
+                defaultLanguage = 'de';
+            }
+
+            // Gespeicherte Sprache auslesen oder Default setzen
+            currentLanguage = localStorage.getItem('runnerLanguage') || defaultLanguage;
+            if (!availableLanguages.includes(currentLanguage)) {
+                currentLanguage = defaultLanguage;
+            }
+
+            // Alle Sprachdateien asynchron laden (für das Dropdown)
+            for (const lang of availableLanguages) {
+                try {
+                    const response = await fetch(`lang/${lang}.lang`);
+                    if (!response.ok) throw new Error();
+                    loadedLanguagesData[lang] = await response.json();
+                } catch (e) {
+                    console.error(`Sprachdatei für "${lang}" konnte nicht geladen werden.`, e);
+                }
+            }
+
+            // Fallback, falls die aktuell gewählte Sprache nicht geladen werden konnte
+            if (!loadedLanguagesData[currentLanguage]) {
+                currentLanguage = Object.keys(loadedLanguagesData)[0] || defaultLanguage;
+            }
+
+            buildLanguageDropdown();
+            applyLanguage(currentLanguage);
+        }
+
+        // Baut das HTML-Dropdown-Menü für die Sprachauswahl dynamisch auf
+        function buildLanguageDropdown() {
+            const select = document.getElementById('langSelect');
+            if (!select) return;
+            select.innerHTML = '';
+            for (const lang in loadedLanguagesData) {
+                const opt = document.createElement('option');
+                opt.value = lang;
+                const flag = loadedLanguagesData[lang]['_meta_flag'] || '🌐';
+                const name = loadedLanguagesData[lang]['_meta_name'] || lang.toUpperCase();
+                opt.innerText = `${flag} ${name}`;
+                if (lang === currentLanguage) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
 
         function loadWhitelabelInfo() {
             fetch('whitelabel.info').then(response => { if (!response.ok) throw new Error(); return response.text(); }).then(text => {
@@ -785,26 +724,30 @@
                 }
 
                 const coffeeEl = document.getElementById('coffeeLink');
-                if (coffeeUrl) {
-                    coffeeEl.setAttribute('href', coffeeUrl);
-                    coffeeEl.style.display = 'flex'; 
-                } else {
-                    coffeeEl.style.display = 'none'; 
+                if (coffeeEl) {
+                    if (coffeeUrl) {
+                        coffeeEl.setAttribute('href', coffeeUrl);
+                        coffeeEl.style.display = 'flex'; 
+                    } else {
+                        coffeeEl.style.display = 'none'; 
+                    }
                 }
 
                 const githubEl = document.getElementById('githubLink');
-                if (githubUrl) {
-                    githubEl.setAttribute('href', githubUrl);
-                    githubEl.style.display = 'flex'; 
-                } else {
-                    githubEl.style.display = 'none'; 
+                if (githubEl) {
+                    if (githubUrl) {
+                        githubEl.setAttribute('href', githubUrl);
+                        githubEl.style.display = 'flex'; 
+                    } else {
+                        githubEl.style.display = 'none'; 
+                    }
                 }
             }).catch(() => { 
                 const el = document.getElementById('whitelabelTitle'); 
                 el.innerText = "⏱️ Zeitmessung"; 
                 el.removeAttribute('href'); 
-                document.getElementById('coffeeLink').style.display = 'none';
-                document.getElementById('githubLink').style.display = 'none';
+                if (document.getElementById('coffeeLink')) document.getElementById('coffeeLink').style.display = 'none';
+                if (document.getElementById('githubLink')) document.getElementById('githubLink').style.display = 'none';
             });
         }
 
@@ -812,37 +755,45 @@
         
         function openChangelogModal() {
             const contentEl = document.getElementById('changelogContent');
-            contentEl.innerText = currentLanguage === 'en' ? "Loading Changelog..." : "Changelog wird geladen...";
+            contentEl.innerText = translations['lblChangelogLoading'] || "Loading Changelog...";
             document.getElementById('changelogModal').style.display = 'flex';
             
             fetch('Changelog.info')
                 .then(res => { if (!res.ok) throw new Error(); return res.text(); })
                 .then(text => { contentEl.innerText = text.trim(); })
-                .catch(() => { contentEl.innerText = currentLanguage === 'en' ? "Error loading Changelog (Changelog.info not found)." : "Fehler beim Laden des Changelogs (Changelog.info nicht gefunden)."; });
+                .catch(() => { contentEl.innerText = translations['lblChangelogError'] || "Error loading Changelog."; });
         }
         function closeChangelogModal() { document.getElementById('changelogModal').style.display = 'none'; }
         function closeChangelogModalOnOutsideClick(e) { if(e.target.id === 'changelogModal') closeChangelogModal(); }
 
+        // Setzt die Sprache und speichert die Wahl
         function setLanguage(lang) {
             currentLanguage = lang;
             localStorage.setItem('runnerLanguage', lang);
+            applyLanguage(lang);
+        }
+
+        // Führt die eigentliche DOM-Übersetzung durch
+        function applyLanguage(lang) {
+            translations = loadedLanguagesData[lang] || {};
             
-            document.getElementById('langBtnDe').classList.toggle('active', lang === 'de');
-            document.getElementById('langBtnEn').classList.toggle('active', lang === 'en');
-            
-            const dictionary = translations[lang];
-            for (const key in dictionary) {
+            for (const key in translations) {
+                if (key.startsWith('_meta')) continue; 
                 const el = document.getElementById(key);
                 if (el) {
-                    el.innerText = dictionary[key];
+                    el.innerText = translations[key];
                 }
             }
             
             const runnerInput = document.getElementById('runnerName');
-            if (runnerInput) runnerInput.placeholder = dictionary.runnerNamePlaceholder;
+            if (runnerInput && translations['runnerNamePlaceholder']) {
+                runnerInput.placeholder = translations['runnerNamePlaceholder'];
+            }
             
             const groupInput = document.getElementById('groupRunnerInput');
-            if (groupInput) groupInput.placeholder = dictionary.groupRunnerInputPlaceholder;
+            if (groupInput && translations['groupRunnerInputPlaceholder']) {
+                groupInput.placeholder = translations['groupRunnerInputPlaceholder'];
+            }
 
             buildEventSelectMenu();
             syncPopupRunnerName();
@@ -853,7 +804,6 @@
         function getCleanDisplayName(name) { return name.replace(/^\[.*?\]/, '').trim(); }
         function isEmoji(str) { return /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g.test(str); }
 
-        // Umwandlung des Ländercodes
         function countryCodeToEmoji(code) {
             const c = code.toUpperCase();
             if (c.length === 2) {
@@ -886,13 +836,9 @@
                 sortAndDisplayRuns();
                 resetForm();
                 
-                alert(currentLanguage === 'en' 
-                    ? `Successfully imported and created new event "${targetEventName}"!` 
-                    : `Lauf "${targetEventName}" wurde erfolgreich neu angelegt und importiert!`);
+                alert(translations['lblImportSuccess'] || `Erfolgreich importiert: "${targetEventName}"!`);
             } else {
-                if (confirm(currentLanguage === 'en' 
-                    ? `The event "${targetEventName}" already exists. Overwrite with imported runs?` 
-                    : `Der Lauf "${targetEventName}" existiert bereits. Sollen die existierenden Läufe mit den importierten Daten überschrieben werden?`)) {
+                if (confirm(translations['lblImportOverwriteConfirm'] || `Das Event "${targetEventName}" existiert bereits. Überschreiben?`)) {
                     
                     if (targetIsLocked && !lockedEvents.includes(targetEventName)) {
                         lockedEvents.push(targetEventName);
@@ -938,7 +884,7 @@
         }
 
         function switchTab(mode) {
-            if (isRunning || groupRunners.some(r => r.state === 'running' || r.state === 'paused')) { alert(currentLanguage === 'en' ? "Tab switching locked during active timing!" : "Wechsel während aktiver Messung blockiert!"); return; }
+            if (isRunning || groupRunners.some(r => r.state === 'running' || r.state === 'paused')) { alert(translations['lblTabSwitchBlock'] || "Wechsel blockiert während aktiver Messung!"); return; }
             activeTab = mode;
             document.getElementById('tabSingleBtn').classList.toggle('active', mode === 'single');
             document.getElementById('tabGroupBtn').classList.toggle('active', mode === 'group');
@@ -950,7 +896,7 @@
         // --- Gruppenlauf ---
         function addRunnerToGroup() {
             const input = document.getElementById('groupRunnerInput'); const name = input.value.trim(); 
-            if(!name) { alert(currentLanguage === 'en' ? "Please enter a name for the group runner." : "Bitte einen Namen für den Gruppenläufer eingeben."); return; }
+            if(!name) { alert(translations['lblEnterRunnerName'] || "Bitte einen Namen eingeben."); return; }
             groupRunners.push({ id: Date.now() + Math.random(), name: name, state: 'idle', timeMs: 0, startTime: 0, elapsed: 0, status: 'REGULÄR', penalties: { count: 0, time: 0 }, bonuses: { count: 0, time: 0 } });
             input.value = ''; renderGroupRunners(); document.getElementById('groupMassActionRow').style.display = 'block';
         }
@@ -965,7 +911,7 @@
         // --- Asynchrone Link-Export & Import Logik (V2) ---
         async function exportToLink() {
             if (runs.length === 0) {
-                alert(currentLanguage === 'en' ? "No runs to export." : "Keine Läufe zum Exportieren.");
+                alert(translations['lblNoRunsToExport'] || "Keine Läufe zum Exportieren.");
                 return;
             }
             try {
@@ -977,13 +923,13 @@
                 const shareUrl = `${baseUrl}?import=${encodeURIComponent(finalParam)}`;
                 
                 navigator.clipboard.writeText(shareUrl).then(() => {
-                    alert(currentLanguage === 'en' ? "Short link copied to clipboard!" : "Kurzer Link erfolgreich in die Zwischenablage kopiert!");
+                    alert(translations['lblLinkCopied'] || "Link kopiert!");
                 }).catch(() => {
-                    prompt(currentLanguage === 'en' ? "Copy this link:" : "Kopiere diesen Link:", shareUrl);
+                    prompt(translations['lblCopyThisLink'] || "Diesen Link kopieren:", shareUrl);
                 });
             } catch (e) {
                 console.error(e);
-                alert(currentLanguage === 'en' ? "Error generating compressed link." : "Fehler beim Erstellen des komprimierten Links.");
+                alert(translations['lblLinkError'] || "Fehler beim Erstellen des Links.");
             }
         }
 
@@ -1024,9 +970,7 @@
                     }
                 } catch (e) {
                     console.error("Link-Import-Fehler:", e);
-                    alert(currentLanguage === 'en' 
-                        ? `Failed to parse imported link data: ${e.message}` 
-                        : `Fehler beim Verarbeiten der importierten Link-Daten: ${e.message}`);
+                    alert((translations['lblImportError'] || "Fehler beim Import: ") + e.message);
                 }
             }
         }
@@ -1055,13 +999,11 @@
                     if (Array.isArray(targetRuns)) {
                         processImportedPayload(targetEventName, targetIsLocked, targetRuns);
                     } else {
-                        throw new Error("Die JSON-Datei enthält kein gültiges Array von Läufern.");
+                        throw new Error("Die JSON-Datei enthält kein gültiges Array.");
                     }
                 } catch (err) {
                     console.error("JSON-Import-Fehler:", err);
-                    alert(currentLanguage === 'en' 
-                        ? `Failed to load the imported file. Reason: ${err.message}` 
-                        : `Fehler beim Laden der importierten Datei. Ursache: ${err.message}`);
+                    alert((translations['lblImportError'] || "Fehler beim Import: ") + err.message);
                 }
                 document.getElementById('jsonImportInput').value = '';
             };
@@ -1076,7 +1018,6 @@
             }, 10);
         }
 
-        // Live-Zeitanzeige aktualisieren
         function updateGroupLiveDisplays() {
             groupRunners.forEach(r => { const el = document.getElementById(`gDisplay_${r.id}`); if(el) el.innerText = r.status === 'DNF' || r.status === 'DNS' ? r.status : formatTime(r.timeMs); });
             if (popupWindow && !popupWindow.closed) syncPopupLeaderboard();
@@ -1123,11 +1064,11 @@
                 const div = document.createElement('div'); div.className = 'group-runner-row';
                 let controls = '';
                 if(r.state === 'idle') controls = `<div class="group-mini-btn-row"><button class="btn group-mini-btn" style="background-color: var(--status-color);" onclick="setGroupStatus(${r.id}, 'DNS')">DNS</button><button class="btn group-mini-btn" style="background-color: var(--danger);" onclick="setGroupStatus(${r.id}, 'DNF')">DNF</button><button class="btn group-mini-btn" style="background-color: #7f8c8d;" onclick="setGroupStatus(${r.id}, 'DNQ')">DNQ</button></div>`;
-                else if(r.state === 'running' || r.state === 'paused') controls = `<div class="group-mini-btn-row"><button class="btn group-mini-btn ${r.state === 'running' ? 'btn-pause' : 'btn-start'}" onclick="toggleGroupRunnerTimer(${r.id})">${r.state === 'running' ? 'Pause' : 'Weiter'}</button><button class="btn btn-stop group-mini-btn" onclick="stopGroupRunnerTimer(${r.id})">Stop</button></div>`;
+                else if(r.state === 'running' || r.state === 'paused') controls = `<div class="group-mini-btn-row"><button class="btn group-mini-btn ${r.state === 'running' ? 'btn-pause' : 'btn-start'}" onclick="toggleGroupRunnerTimer(${r.id})">${r.state === 'running' ? (translations['lblPauseBtn'] || 'Pause') : (translations['lblContinueBtn'] || 'Weiter')}</button><button class="btn btn-stop group-mini-btn" onclick="stopGroupRunnerTimer(${r.id})">${translations['lblStopBtn'] || 'Stop'}</button></div>`;
                 else if(r.state === 'stopped') {
                     let mod = '';
-                    if(r.status === 'REGULÄR') mod = `<div style="margin: 8px 0; display:flex; flex-wrap:wrap; gap:4px;">${penaltyTypes.map(p => `<button class="btn" style="background:var(--penalty); font-size:0.75rem; padding:4px 8px;" onclick="adjustGroupTime(${r.id}, 'penalty', ${p.seconds})">${p.name}</button>`).join('')}${bonusTypes.map(b => `<button class="btn" style="background:var(--bonus); font-size:0.75rem; padding:4px 8px;" onclick="adjustGroupTime(${r.id}, 'bonus', ${b.seconds})">${b.name}</button>`).join('')}</div><div style="font-size:0.85rem; font-weight:600; margin-bottom:6px; color:var(--penalty)">${currentLanguage === 'en' ? 'Penalties' : 'Strafen'}: +${r.penalties.time}s | ${currentLanguage === 'en' ? 'Bonuses' : 'Boni'}: -${r.bonuses.time}s</div>`;
-                    controls = `${mod}<div class="group-mini-btn-row"><button class="btn btn-start group-mini-btn" onclick="saveGroupRunner(${r.id})">💾 ${currentLanguage === 'en' ? 'Save' : 'Speichern'}</button>${r.status === 'REGULÄR' ? `<button class="btn group-mini-btn" style="background-color: var(--danger);" onclick="setGroupStatus(${r.id}, 'DNF')">DNF</button><button class="btn group-mini-btn" style="background-color: var(--status-color);" onclick="setGroupStatus(${r.id}, 'DNQ')">DNQ</button>` : ''}</div>`;
+                    if(r.status === 'REGULÄR') mod = `<div style="margin: 8px 0; display:flex; flex-wrap:wrap; gap:4px;">${penaltyTypes.map(p => `<button class="btn" style="background:var(--penalty); font-size:0.75rem; padding:4px 8px;" onclick="adjustGroupTime(${r.id}, 'penalty', ${p.seconds})">${p.name}</button>`).join('')}${bonusTypes.map(b => `<button class="btn" style="background:var(--bonus); font-size:0.75rem; padding:4px 8px;" onclick="adjustGroupTime(${r.id}, 'bonus', ${b.seconds})">${b.name}</button>`).join('')}</div><div style="font-size:0.85rem; font-weight:600; margin-bottom:6px; color:var(--penalty)">${translations['lblEditPenaltyCount'] || 'Strafen'}: +${r.penalties.time}s | ${translations['lblEditBonusCount'] || 'Boni'}: -${r.bonuses.time}s</div>`;
+                    controls = `${mod}<div class="group-mini-btn-row"><button class="btn btn-start group-mini-btn" onclick="saveGroupRunner(${r.id})">💾 ${translations['lblEditModalSave'] || 'Speichern'}</button>${r.status === 'REGULÄR' ? `<button class="btn group-mini-btn" style="background-color: var(--danger);" onclick="setGroupStatus(${r.id}, 'DNF')">DNF</button><button class="btn group-mini-btn" style="background-color: var(--status-color);" onclick="setGroupStatus(${r.id}, 'DNQ')">DNQ</button>` : ''}</div>`;
                 }
                 div.innerHTML = `<div class="group-runner-header"><span class="group-runner-name-label">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR' ? `[${r.status}]` : ''}</span><span class="group-time-display" id="gDisplay_${r.id}">${r.status === 'DNF' || r.status === 'DNS' ? r.status : formatTime(r.timeMs)}</span></div>${controls}`;
                 container.appendChild(div);
@@ -1138,15 +1079,15 @@
         // --- Events ---
         function buildEventSelectMenu() {
             const select = document.getElementById('eventSelect'); select.innerHTML = '';
-            eventList.forEach(ev => { const opt = document.createElement('option'); opt.value = ev; opt.innerText = (lockedEvents.includes(ev) ? '🔒 ' : '') + (ev === 'Standardlauf' ? translations[currentLanguage].lblStandardRun : '🏆 ' + ev); if (ev === currentEvent) opt.selected = true; select.appendChild(opt); });
+            eventList.forEach(ev => { const opt = document.createElement('option'); opt.value = ev; opt.innerText = (lockedEvents.includes(ev) ? '🔒 ' : '') + (ev === 'Standardlauf' ? (translations['lblStandardRun'] || 'Standardlauf') : '🏆 ' + ev); if (ev === currentEvent) opt.selected = true; select.appendChild(opt); });
             updateLockBtnStyle();
         }
         function openEventCreationModal() { document.getElementById('eventModal').style.display = 'flex'; document.getElementById('newEventName').focus(); }
         function closeEventModal() { document.getElementById('eventModal').style.display = 'none'; document.getElementById('newEventName').value = ''; }
-        function createNewEvent() { const name = document.getElementById('newEventName').value.trim(); if (!name) { alert(currentLanguage === 'en' ? "Please enter an event name." : "Bitte einen Eventnamen eingeben."); return; } if (eventList.includes(name)) { alert(currentLanguage === 'en' ? "This event already exists." : "Dieses Event existiert bereits."); return; } eventList.push(name); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); currentEvent = name; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); closeEventModal(); }
+        function createNewEvent() { const name = document.getElementById('newEventName').value.trim(); if (!name) { alert(translations['lblErrorNoEventName'] || "Bitte Eventnamen eingeben."); return; } if (eventList.includes(name)) { alert(translations['lblErrorEventExists'] || "Event existiert bereits."); return; } eventList.push(name); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); currentEvent = name; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); closeEventModal(); }
         function handleEventSelectChange() { currentEvent = document.getElementById('eventSelect').value; localStorage.setItem('runnerCurrentEventName', currentEvent); loadRunsForCurrentEvent(); resetForm(); updateLockBtnStyle(); }
-        function deleteCurrentEvent() { if (currentEvent === 'Standardlauf') { alert(currentLanguage === 'en' ? "The Standard Run cannot be deleted." : "Der Standardlauf kann nicht gelöscht werden."); return; } if (!confirm(currentLanguage === 'en' ? `Irrevocably delete event "${currentEvent}"?` : `Event "${currentEvent}" unwiderruflich löschen?`)) return; localStorage.removeItem(`runnerLeaderboard_${currentEvent}`); eventList = eventList.filter(e => e !== currentEvent); lockedEvents = lockedEvents.filter(e => e !== currentEvent); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); currentEvent = 'Standardlauf'; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); resetForm(); }
-        function toggleLockCurrentEvent() { if (isRunning || groupRunners.length > 0) { alert(currentLanguage === 'en' ? "Switching locked during active timing." : "Wechsel blockiert während laufender Messungen."); return; } if(lockedEvents.includes(currentEvent)) lockedEvents = lockedEvents.filter(e => e !== currentEvent); else lockedEvents.push(currentEvent); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); buildEventSelectMenu(); resetForm(); }
+        function deleteCurrentEvent() { if (currentEvent === 'Standardlauf') { alert(translations['lblErrorCannotDeleteStandard'] || "Standardlauf kann nicht gelöscht werden."); return; } if (!confirm(translations['lblConfirmDeleteEvent'] || `Event "${currentEvent}" wirklich löschen?`)) return; localStorage.removeItem(`runnerLeaderboard_${currentEvent}`); eventList = eventList.filter(e => e !== currentEvent); lockedEvents = lockedEvents.filter(e => e !== currentEvent); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); currentEvent = 'Standardlauf'; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); resetForm(); }
+        function toggleLockCurrentEvent() { if (isRunning || groupRunners.length > 0) { alert(translations['lblTabSwitchBlock'] || "Blockiert während Messung."); return; } if(lockedEvents.includes(currentEvent)) lockedEvents = lockedEvents.filter(e => e !== currentEvent); else lockedEvents.push(currentEvent); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); buildEventSelectMenu(); resetForm(); }
         function updateLockBtnStyle() { const btn = document.getElementById('lockEventBtn'); const isLocked = lockedEvents.includes(currentEvent); btn.innerText = isLocked ? "🔓" : "🔒"; btn.className = isLocked ? "btn-event-action btn-lock-event is-locked" : "btn-event-action btn-lock-event"; }
         function loadRunsForCurrentEvent() { runs = JSON.parse(localStorage.getItem(`runnerLeaderboard_${currentEvent}`)) || []; sortAndDisplayRuns(); }
         function saveRunsForCurrentEvent() { localStorage.setItem(`runnerLeaderboard_${currentEvent}`, JSON.stringify(runs)); }
@@ -1154,9 +1095,9 @@
         // --- Theme & Custom Buttons ---
         function initTheme() { const saved = localStorage.getItem('theme') || 'light'; document.documentElement.setAttribute('data-theme', saved); document.getElementById('themeIcon').innerText = saved === 'dark' ? "☀️" : "🌙"; document.getElementById('themeText').innerText = saved === 'dark' ? "Light Mode" : "Dark Mode"; syncPopupTheme(); }
         function toggleTheme() { const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', newTheme); localStorage.setItem('theme', newTheme); initTheme(); }
-        function openModal(mode) { if (lockedEvents.includes(currentEvent)) return; currentModalMode = mode; document.getElementById('modalTitle').innerText = mode === 'add_btn_penalty' ? (currentLanguage === 'en' ? "Create New Penalty Button (+)" : "Neuen Straf-Button anlegen (+)") : (currentLanguage === 'en' ? "Create New Bonus Button (-)" : "Neuen Bonus-Button anlegen (-)"); document.getElementById('customModal').style.display = 'flex'; document.getElementById('newBtnName').focus(); }
+        function openModal(mode) { if (lockedEvents.includes(currentEvent)) return; currentModalMode = mode; document.getElementById('modalTitle').innerText = mode === 'add_btn_penalty' ? (translations['lblNewBtnName'] || "Name:") : (translations['lblNewBtnName'] || "Name:"); document.getElementById('customModal').style.display = 'flex'; document.getElementById('newBtnName').focus(); }
         function closeModal() { document.getElementById('customModal').style.display = 'none'; document.getElementById('newBtnName').value = ''; document.getElementById('newBtnSeconds').value = ''; }
-        function createNewButton() { const name = document.getElementById('newBtnName').value.trim(), secs = parseInt(document.getElementById('newBtnSeconds').value, 10); if (!name) { alert(currentLanguage === 'en' ? "Please enter a label." : "Bitte eine Bezeichnung eingeben."); return; } if (isNaN(secs) || secs <= 0) { alert(currentLanguage === 'en' ? "Please enter a valid amount of seconds." : "Bitte eine gültige Sekundenzahl eingeben."); return; } if (currentModalMode === 'add_btn_penalty') { penaltyTypes.push({id: Date.now(), name: `${name} (+${secs}s)`, seconds: secs}); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes.push({id: Date.now(), name: `${name} (-${secs}s)`, seconds: secs}); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } closeModal(); renderGroupRunners(); }
+        function createNewButton() { const name = document.getElementById('newBtnName').value.trim(), secs = parseInt(document.getElementById('newBtnSeconds').value, 10); if (!name) { alert(translations['lblEnterRunnerName'] || "Bitte Namen eingeben."); return; } if (isNaN(secs) || secs <= 0) { alert("Ungültige Zeit."); return; } if (currentModalMode === 'add_btn_penalty') { penaltyTypes.push({id: Date.now(), name: `${name} (+${secs}s)`, seconds: secs}); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes.push({id: Date.now(), name: `${name} (-${secs}s)`, seconds: secs}); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } closeModal(); renderGroupRunners(); }
         function deleteCustomType(id, mode, e) { e.stopPropagation(); if (mode === 'penalty') { penaltyTypes = penaltyTypes.filter(p => p.id !== id); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes = bonusTypes.filter(b => b.id !== id); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } renderGroupRunners(); }
         function renderCustomButtons(mode) { const container = document.getElementById(mode === 'penalty' ? 'dynamicPenaltyGroup' : 'dynamicBonusGroup'); container.innerHTML = ''; const target = mode === 'penalty' ? penaltyTypes : bonusTypes; const isSaveDisabled = document.getElementById('saveBtn').disabled || lockedEvents.includes(currentEvent); target.forEach(item => { const wrapper = document.createElement('div'); wrapper.className = `custom-btn-container type-${mode}`; wrapper.innerHTML = `<button class="btn-custom-action" ${isSaveDisabled?'disabled':''} onclick="handleTimeAdjustment('${mode}', ${item.seconds})">${item.name}</button><button class="delete-custom-type-btn" ${lockedEvents.includes(currentEvent)?'disabled':''} onclick="deleteCustomType(${item.id}, '${mode}', event)">&times;</button>`; container.appendChild(wrapper); }); }
         function setActionButtonsDisabled(d) { const isLocked = lockedEvents.includes(currentEvent); document.querySelectorAll('#tabSingleContent .btn-custom-action').forEach(b => b.disabled = d || isLocked); document.getElementById('statusBtnDNQ').disabled = d || isLocked; }
@@ -1165,31 +1106,31 @@
         // --- Zeitmessung Logik (Einzel) ---
         function toggleTimer() {
             if (lockedEvents.includes(currentEvent)) return;
-            if (!document.getElementById('runnerName').value.trim()) { alert(currentLanguage === 'en' ? "Please enter a name for the runner." : "Bitte einen Namen für den Läufer eingeben."); return; }
+            if (!document.getElementById('runnerName').value.trim()) { alert(translations['lblEnterRunnerName'] || "Bitte Läufernamen eingeben."); return; }
             const startBtn = document.getElementById('startBtn');
             if (currentStatus !== "REGULÄR") { currentStatus = "REGULÄR"; document.getElementById('display').innerText = "00:00:00.00"; updateAdjustmentNoticeDisplay(); }
             if (!isRunning) {
                 isRunning = true; startTime = Date.now() - elapsedBeforePause;
                 timerInterval = setInterval(() => { currentTotalMs = Date.now() - startTime; document.getElementById('display').innerText = formatTime(currentTotalMs); syncPopupTime(formatTime(currentTotalMs)); }, 10);
-                startBtn.innerText = "Pause"; startBtn.className = "btn btn-pause"; document.getElementById('stopBtn').disabled = false; document.getElementById('saveBtn').disabled = true; document.getElementById('runnerName').disabled = true; setActionButtonsDisabled(true);
-            } else { isRunning = false; isPaused = true; clearInterval(timerInterval); elapsedBeforePause = currentTotalMs; startBtn.innerText = currentLanguage === 'en' ? "Continue" : "Weiter"; startBtn.className = "btn btn-start"; }
+                startBtn.innerText = translations['lblPauseBtn'] || "Pause"; startBtn.className = "btn btn-pause"; document.getElementById('stopBtn').disabled = false; document.getElementById('saveBtn').disabled = true; document.getElementById('runnerName').disabled = true; setActionButtonsDisabled(true);
+            } else { isRunning = false; isPaused = true; clearInterval(timerInterval); elapsedBeforePause = currentTotalMs; startBtn.innerText = translations['lblContinueBtn'] || "Weiter"; startBtn.className = "btn btn-start"; }
         }
-        function stopTimer() { isRunning = false; isPaused = false; clearInterval(timerInterval); document.getElementById('startBtn').disabled = true; document.getElementById('startBtn').innerText = "Start"; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = lockedEvents.includes(currentEvent); setActionButtonsDisabled(false); }
+        function stopTimer() { isRunning = false; isPaused = false; clearInterval(timerInterval); document.getElementById('startBtn').disabled = true; document.getElementById('startBtn').innerText = translations['lblStartBtn'] || "Start"; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = lockedEvents.includes(currentEvent); setActionButtonsDisabled(false); }
         function handleTimeAdjustment(mode, secs) { if (currentStatus !== "REGULÄR") return; if (mode === 'penalty') { penaltyCount++; penaltyTime += secs; currentTotalMs += (secs*1000); elapsedBeforePause += (secs*1000); if(isRunning) startTime -= (secs*1000); } else { bonusCount++; bonusTime += secs; currentTotalMs -= (secs*1000); elapsedBeforePause -= (secs*1000); if(isRunning) startTime += (secs*1000); } if (currentTotalMs < 0) { currentTotalMs = 0; elapsedBeforePause = 0; if(isRunning) startTime = Date.now(); } document.getElementById('display').innerText = formatTime(currentTotalMs); syncPopupTime(formatTime(currentTotalMs)); updateAdjustmentNoticeDisplay(); }
-        function handleStatusSet(s) { if (lockedEvents.includes(currentEvent)) return; if (!document.getElementById('runnerName').value.trim()) { alert(currentLanguage === 'en' ? "Please enter a name for the runner." : "Bitte einen Namen für den Läufer eingeben."); return; } currentStatus = s; if (s !== "REGULÄR") { isRunning = false; clearInterval(timerInterval); if (s === "DNF" || s === "DNS") { currentTotalMs = 0; elapsedBeforePause = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; document.getElementById('display').innerText = "--:--:--.--"; syncPopupTime(s); } document.getElementById('startBtn').disabled = true; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = false; document.getElementById('runnerName').disabled = true; } updateAdjustmentNoticeDisplay(); }
-        function updateAdjustmentNoticeDisplay() { const n = document.getElementById('adjustmentNotice'); if (currentStatus !== "REGULÄR") { n.innerText = `Status: ${currentStatus}`; n.className = "adjustment-display status-info"; } else { let t = ""; if (penaltyTime > 0) t += `+${penaltyTime}s ${currentLanguage === 'en' ? 'Penalty' : 'Strafe'} `; if (bonusTime > 0) t += `-${bonusTime}s ${currentLanguage === 'en' ? 'Bonus' : 'Bonus'}`; n.innerText = t.trim(); n.className = `adjustment-display ${penaltyTime >= bonusTime ? 'penalty' : 'bonus'}`; } syncPopupNotice(); }
-        function saveRun() { if (lockedEvents.includes(currentEvent)) return; if(!document.getElementById('runnerName').value.trim()) { alert(currentLanguage === 'en' ? "No name specified." : "Kein Name hinterlegt."); return; } runs.push({ id: Date.now(), name: document.getElementById('runnerName').value.trim(), timeMs: currentTotalMs, timeString: (currentStatus === "DNF" || currentStatus === "DNS") ? currentStatus : formatTime(currentTotalMs), status: currentStatus, penalties: { count: penaltyCount, time: penaltyTime }, bonuses: { count: bonusCount, time: bonusTime } }); saveRunsForCurrentEvent(); sortAndDisplayRuns(); resetForm(); }
-        function resetForm() { isRunning = false; isPaused = false; clearInterval(timerInterval); elapsedBeforePause = 0; currentTotalMs = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; currentStatus = "REGULÄR"; const isLocked = lockedEvents.includes(currentEvent); document.getElementById('timingCard').style.display = isLocked ? 'none' : 'block'; document.getElementById('runnerName').value = ""; document.getElementById('runnerName').disabled = isLocked; document.getElementById('display').innerText = "00:00:00.00"; document.getElementById('adjustmentNotice').innerText = ""; document.getElementById('startBtn').disabled = isLocked; document.getElementById('startBtn').innerText = "Start"; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = true; document.getElementById('statusBtnDNS').disabled = isLocked; document.getElementById('statusBtnDNF').disabled = isLocked; document.getElementById('statusBtnDNQ').disabled = true; document.getElementById('addPenaltyTypeBtn').disabled = isLocked; document.getElementById('addBonusTypeBtn').disabled = isLocked; renderCustomButtons('penalty'); renderCustomButtons('bonus'); groupRunners = []; renderGroupRunners(); document.getElementById('groupSetupForm').style.display = 'block'; document.getElementById('groupMassActionRow').style.display = 'none'; syncPopupRunnerName(); syncPopupTime(isLocked ? translations[currentLanguage].lblTimerBlocked : "00:00:00.00"); syncPopupNotice(); }
+        function handleStatusSet(s) { if (lockedEvents.includes(currentEvent)) return; if (!document.getElementById('runnerName').value.trim()) { alert(translations['lblEnterRunnerName'] || "Name fehlt."); return; } currentStatus = s; if (s !== "REGULÄR") { isRunning = false; clearInterval(timerInterval); if (s === "DNF" || s === "DNS") { currentTotalMs = 0; elapsedBeforePause = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; document.getElementById('display').innerText = "--:--:--.--"; syncPopupTime(s); } document.getElementById('startBtn').disabled = true; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = false; document.getElementById('runnerName').disabled = true; } updateAdjustmentNoticeDisplay(); }
+        function updateAdjustmentNoticeDisplay() { const n = document.getElementById('adjustmentNotice'); if (currentStatus !== "REGULÄR") { n.innerText = `Status: ${currentStatus}`; n.className = "adjustment-display status-info"; } else { let t = ""; if (penaltyTime > 0) t += `+${penaltyTime}s`; if (bonusTime > 0) t += ` -${bonusTime}s`; n.innerText = t.trim(); n.className = `adjustment-display ${penaltyTime >= bonusTime ? 'penalty' : 'bonus'}`; } syncPopupNotice(); }
+        function saveRun() { if (lockedEvents.includes(currentEvent)) return; if(!document.getElementById('runnerName').value.trim()) return; runs.push({ id: Date.now(), name: document.getElementById('runnerName').value.trim(), timeMs: currentTotalMs, timeString: (currentStatus === "DNF" || currentStatus === "DNS") ? currentStatus : formatTime(currentTotalMs), status: currentStatus, penalties: { count: penaltyCount, time: penaltyTime }, bonuses: { count: bonusCount, time: bonusTime } }); saveRunsForCurrentEvent(); sortAndDisplayRuns(); resetForm(); }
+        function resetForm() { isRunning = false; isPaused = false; clearInterval(timerInterval); elapsedBeforePause = 0; currentTotalMs = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; currentStatus = "REGULÄR"; const isLocked = lockedEvents.includes(currentEvent); document.getElementById('timingCard').style.display = isLocked ? 'none' : 'block'; document.getElementById('runnerName').value = ""; document.getElementById('runnerName').disabled = isLocked; document.getElementById('display').innerText = "00:00:00.00"; document.getElementById('adjustmentNotice').innerText = ""; document.getElementById('startBtn').disabled = isLocked; document.getElementById('startBtn').innerText = translations['lblStartBtn'] || "Start"; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = true; document.getElementById('statusBtnDNS').disabled = isLocked; document.getElementById('statusBtnDNF').disabled = isLocked; document.getElementById('statusBtnDNQ').disabled = true; document.getElementById('addPenaltyTypeBtn').disabled = isLocked; document.getElementById('addBonusTypeBtn').disabled = isLocked; renderCustomButtons('penalty'); renderCustomButtons('bonus'); groupRunners = []; renderGroupRunners(); document.getElementById('groupSetupForm').style.display = 'block'; document.getElementById('groupMassActionRow').style.display = 'none'; syncPopupRunnerName(); syncPopupTime(isLocked ? (translations['lblTimerBlocked'] || "GEBLOCKT") : "00:00:00.00"); syncPopupNotice(); }
 
         // --- Bestenliste Renderer ---
         function sortAndDisplayRuns(isExportMode = false) {
             runs.sort((a, b) => { const ord = { "REGULÄR": 1, "DNQ": 2, "DNF": 3, "DNS": 4 }; if (ord[a.status] !== ord[b.status]) return ord[a.status] - ord[b.status]; if (a.status === "REGULÄR" || a.status === "DNQ") return a.timeMs - b.timeMs; return a.name.localeCompare(b.name); });
             const ol = document.getElementById('leaderboard'); ol.innerHTML = "";
             document.getElementById('leaderboardHeader').style.display = runs.length > 0 ? 'flex' : 'none';
-            if (runs.length === 0) { ol.innerHTML = `<li class="empty-state">${currentLanguage === 'en' ? 'No runs registered yet.' : 'Noch keine Läufe registriert.'}</li>`; if (popupWindow && !popupWindow.closed) syncPopupLeaderboard(); return; }
+            if (runs.length === 0) { ol.innerHTML = `<li class="empty-state">${translations['lblEmptyLeaderboard'] || 'Noch keine Läufe.'}</li>`; if (popupWindow && !popupWindow.closed) syncPopupLeaderboard(); return; }
             runs.forEach((run, index) => {
                 const li = document.createElement('li'); li.className = "leaderboard-item";
-                let b = ''; if (run.status !== "REGULÄR") b += `<span class="badge badge-status">${run.status}</span>`; if (run.penalties?.time > 0) b += `<span class="badge badge-penalty">${run.penalties.count}x ${currentLanguage === 'en' ? 'Penalty' : 'Strafe'} (+${run.penalties.time}s)</span>`; if (run.bonuses?.time > 0) b += `<span class="badge badge-bonus">${run.bonuses.count}x Bonus (-${run.bonuses.time}s)</span>`;
+                let b = ''; if (run.status !== "REGULÄR") b += `<span class="badge badge-status">${run.status}</span>`; if (run.penalties?.time > 0) b += `<span class="badge badge-penalty">${run.penalties.count}x (+${run.penalties.time}s)</span>`; if (run.bonuses?.time > 0) b += `<span class="badge badge-bonus">${run.bonuses.count}x (-${run.bonuses.time}s)</span>`;
                 let actionButtonsHTML = isExportMode ? '' : `<button class="action-btn edit-btn" onclick="openEditModal(${run.id})">📝</button><button class="action-btn delete-btn" onclick="deleteRun(${run.id})">&times;</button>`;
                 
                 li.innerHTML = `<div class="runner-info"><span class="rank">#${index + 1}</span><div><div class="runner-name-container">${getRunnerIconHTML(run.name, isExportMode)}<span class="runner-name">${escapeHTML(getCleanDisplayName(run.name))}</span></div><div class="stats-badges">${b}</div></div></div><div class="right-side-container"><span class="runner-time">${run.timeString}</span>${actionButtonsHTML}</div>`;
@@ -1251,26 +1192,26 @@
         }
 
         function syncPopupTheme() { if (popupWindow && !popupWindow.closed) popupWindow.document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'light'); }
-        function syncPopupRunnerName() { if (!popupWindow || popupWindow.closed || activeTab === 'group') return; popupWindow.document.getElementById('pRunnerName').innerText = getCleanDisplayName(document.getElementById('runnerName').value.trim()) || (lockedEvents.includes(currentEvent) ? translations[currentLanguage].lblLobbyLocked : translations[currentLanguage].lblLobbyReady); }
+        function syncPopupRunnerName() { if (!popupWindow || popupWindow.closed || activeTab === 'group') return; popupWindow.document.getElementById('pRunnerName').innerText = getCleanDisplayName(document.getElementById('runnerName').value.trim()) || (lockedEvents.includes(currentEvent) ? (translations['lblLobbyLocked'] || "Gesperrt") : (translations['lblLobbyReady'] || "Bereit...")); }
         function syncPopupTime(t) { if (popupWindow && !popupWindow.closed && activeTab === 'single') popupWindow.document.getElementById('pDisplay').innerText = t; }
         function syncPopupNotice() { if (!popupWindow || popupWindow.closed || activeTab === 'group') return; const el = popupWindow.document.getElementById('pNotice'); if (currentStatus !== "REGULÄR") { el.innerText = `Status: ${currentStatus}`; el.className = "notice-status"; } else { el.innerText = ((penaltyTime > 0 ? `+${penaltyTime}s ` : '') + (bonusTime > 0 ? `-${bonusTime}s` : '')).trim(); el.className = penaltyTime >= bonusTime ? "notice-penalty" : "notice-bonus"; } }
         
         function syncPopupLeaderboard() {
             if (!popupWindow || popupWindow.closed) return;
-            popupWindow.document.getElementById('pPopHeader').innerText = translations[currentLanguage].lblLeaderboardTitle;
+            popupWindow.document.getElementById('pPopHeader').innerText = translations['lblLeaderboardTitle'] || "🏆 Bestenliste";
             const pOl = popupWindow.document.getElementById('pLeaderboard'); pOl.innerHTML = "";
-            if (runs.length === 0) pOl.innerHTML = `<li style="text-align:center;color:#7f8c8d;font-style:italic;padding-top:20px;">${currentLanguage === 'en' ? 'No runs' : 'Keine Läufe'}</li>`;
+            if (runs.length === 0) pOl.innerHTML = `<li style="text-align:center;color:#7f8c8d;font-style:italic;padding-top:20px;">${translations['lblEmptyLeaderboard'] || 'Keine Läufe'}</li>`;
             else runs.forEach((run, index) => { const li = popupWindow.document.createElement('li'); li.className = "pop-item"; let tags = (run.status !== "REGULÄR" ? `<span class="p-badge pb-s">${run.status}</span>` : '') + (run.penalties?.time > 0 ? `<span class="p-badge pb-p">+${run.penalties.time}s</span>` : '') + (run.bonuses?.time > 0 ? `<span class="p-badge pb-b">-${run.bonuses.time}s</span>` : ''); li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">#${index+1}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div class="pop-time">${run.timeString}</div>`; pOl.appendChild(li); });
             const leftPane = popupWindow.document.getElementById('pLeftPane');
             if(activeTab === 'single') { if(!popupWindow.document.getElementById('pDisplay')) { leftPane.innerHTML = '<div id="pRunnerName">Bereit...</div><div id="pDisplay">00:00:00.00</div><div id="pNotice"></div>'; syncPopupRunnerName(); syncPopupNotice(); } }
-            else { if(groupRunners.length === 0) leftPane.innerHTML = `<div style="font-size:2rem; font-weight:bold; color:var(--text-light)">${currentLanguage === 'en' ? 'Group run: preparing...' : 'Gruppenlauf: Bereitstellung...'}</div>`; else leftPane.innerHTML = `<div class="multi-grid">${groupRunners.map(r => `<div class="multi-box"><div class="multi-name">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR'?'['+r.status+']':''}</div><div class="multi-time">${r.status==='DNF'||r.status==='DNS'?r.status:formatTime(r.timeMs)}</div><div style="font-size:0.9rem; color:var(--text-light)">${currentLanguage === 'en' ? 'Penalties' : 'Strafen'}: +${r.penalties.time}s | ${currentLanguage === 'en' ? 'Bonuses' : 'Boni'}: -${r.bonuses.time}s</div></div>`).join('')}</div>`; }
+            else { if(groupRunners.length === 0) leftPane.innerHTML = `<div style="font-size:2rem; font-weight:bold; color:var(--text-light)">${translations['lblGroupSetup'] || 'Gruppenlauf: Bereitstellung...'}</div>`; else leftPane.innerHTML = `<div class="multi-grid">${groupRunners.map(r => `<div class="multi-box"><div class="multi-name">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR'?'['+r.status+']':''}</div><div class="multi-time">${r.status==='DNF'||r.status==='DNS'?r.status:formatTime(r.timeMs)}</div><div style="font-size:0.9rem; color:var(--text-light)">${translations['lblEditPenaltyCount'] || 'Strafen'}: +${r.penalties.time}s | ${translations['lblEditBonusCount'] || 'Boni'}: -${r.bonuses.time}s</div></div>`).join('')}</div>`; }
         }
 
         // --- Export ---
         function prepareExportStyles() {
             const element = document.getElementById('leaderboardCard'), cardHeader = document.getElementById('cardHeader');
             const pdfEventTitle = document.getElementById('pdfEventTitle');
-            pdfEventTitle.innerText = currentEvent === 'Standardlauf' ? translations[currentLanguage].lblLeaderboardTitle : currentEvent;
+            pdfEventTitle.innerText = currentEvent === 'Standardlauf' ? (translations['lblLeaderboardTitle'] || "Bestenliste") : currentEvent;
             
             cardHeader.style.display = 'none'; pdfEventTitle.style.display = 'block'; element.classList.add('pdf-export-mode');
             sortAndDisplayRuns(true);
