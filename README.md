@@ -52,7 +52,7 @@ The system is designed for flexibility and can be tailored to match specific eve
 *Configuration example in `whitelabel.info`:*
 
 ```text
-Title=YourEvent Name
+Title=Name for the App
 URL=https://your-website.com/timr
 coffee=Link to Donate to the project
 github=https://github.com/your-repository
