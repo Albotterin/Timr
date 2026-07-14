@@ -7,6 +7,9 @@ HTML based Timing App for Sports and Other Activities. Coded heavily with AI and
 
 A high-performance, lightweight web application for precise timing, specially developed for sports events, scout gatherings, and other competitions.
 
+## How it all begun
+
+
 ## 🚀 Features
 
 * **Precision Timing:** Start, stop, and pause functionality for individual runners.
