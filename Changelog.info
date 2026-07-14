@@ -1,14 +1,15 @@
 1.00.0 Erste Version
 ...
-1.31.0 Icons wurden eingefÃ¼rt
+1.31.0 Icons wurden eingeführt
 1.31.5 Icons wurden gefixt
-1.32.0 Changelog wurde eingefÃ¼hrt
+1.32.0 Changelog wurde eingeführt
 1.32.1 Problem beim Darkmode Toggle behoben
-1.32.2 Export verschÃ¶nert
+1.32.2 Export verschönert
 1.33.0 Englisch Support
-1.34.0 URL ex- und import hinzugefÃ¼gt und JSON ex-und import verbessert
-1.34.1 Buy me a coffee hinzugefÃ¼gt
-1.34.2 Optionen in eigenes MenÃ¼ verschoben
-1.34.3 Share Link verkÃ¼rzt in v2
+1.34.0 URL ex- und import hinzugefügt und JSON ex-und import verbessert
+1.34.1 Buy me a coffee hinzugefügt
+1.34.2 Optionen in eigenes Menü verschoben
+1.34.3 Share Link verkürzt in v2
 1.34.4 Fixed Bestenliste allignment
-1.34.5 Github implementation
+1.34.5 Github Implementation
+1.35.0 Unterstützung für dynamische Sprachen
