@@ -58,6 +58,15 @@ coffee=Link to Donate to the project
 github=https://github.com/your-repository
 ```
 
+## 🏃 Naming Runners
+(This Chapter is not AI generated)
+
+* Runners in the Leaderboard default to the 🏃 Symbol.
+* By Adding [] as a prefix the symbol can be customized
+** By putting an emoji in the middle this will be the symbol
+** By puttin a ccontry code in the middle this will be the symbol
+** By putting a Domain in the middle, the favicon will be the symbol
+
 
 ## ☕ Support & Contact
 
