@@ -47,6 +47,7 @@
   "lblLobbyReady": "Pronto...",
   "lblLobbyLocked": "Bloqueado",
   "lblTimerBlocked": "BLOQUEADO",
+  "lblEnterRunnerName": "Por favor, insira um nome.",
   "lblSettingsText": "Opções",
   "lblLanguage": "🌍 Idioma:",
   "lblCoffeeText": "Pague-me um café",

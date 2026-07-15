@@ -53,6 +53,7 @@
   "lblGithubText": "Vedi su GitHub",
   "lblSaveBtnText": "Salva corsa",
   "lblNewBtnPlaceholder": "es. Ostacolo superato",
+  "lblEnterRunnerName": "Si prega di inserire un nome.",
   "lblDeleteAllData": "🗑️ Elimina tutti i dati",
   "lblConfirmDeleteAll": "Attenzione: questo eliminerà tutte le corse, gli eventi e le impostazioni. Procedere?",
   "lblEmptyLeaderboard": "Nessuna corsa registrata."

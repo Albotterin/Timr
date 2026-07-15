@@ -54,6 +54,7 @@
   "lblSaveBtnText": "Save Run",
   "lblNewBtnPlaceholder": "e.g. Obstacle Skipper",
   "lblDeleteAllData": "🗑️ Delete all data",
+  "lblEnterRunnerName": "Please enter a name.",
   "lblConfirmDeleteAll": "Warning: This will delete all runs, events, and settings. Proceed?",
   "lblEmptyLeaderboard": "No runs registered yet."
 }

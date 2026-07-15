@@ -50,6 +50,7 @@
   "lblSettingsText": "Opciones",
   "lblLanguage": "🌍 Idioma:",
   "lblCoffeeText": "Invítame a un café",
+  "lblEnterRunnerName": "Por favor, introduzca un nombre.",
   "lblGithubText": "Ver en GitHub",
   "lblSaveBtnText": "Guardar carrera",
   "lblNewBtnPlaceholder": "ej. Obstáculo superado",
