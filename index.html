@@ -924,14 +924,23 @@
                 let b = ''; if (run.status !== "REGULÄR") b += `<span class="badge badge-status">${run.status}</span>`; if (run.penalties?.time > 0) b += `<span class="badge badge-penalty">${run.penalties.count}x (+${run.penalties.time}s)</span>`; if (run.bonuses?.time > 0) b += `<span class="badge badge-bonus">${run.bonuses.count}x (-${run.bonuses.time}s)</span>`;
                 let actionButtonsHTML = isExportMode ? '' : `<button class="action-btn edit-btn" onclick="openEditModal(${run.id})">📝</button><button class="action-btn delete-btn" onclick="deleteRun(${run.id})">&times;</button>`;
                 
-                // Differenz-HTML aufbauen (jetzt auch für DNQ)
+                // Differenz-HTML aufbauen
                 let diffHTML = '';
                 if ((run.status === "REGULÄR" || run.status === "DNQ") && bestTimeMs !== null) {
                     const diffMs = run.timeMs - bestTimeMs;
                     if (diffMs > 0) diffHTML = `<span class="runner-diff">+${formatTime(diffMs)}</span>`;
                 }
 
-                li.innerHTML = `<div class="runner-info"><span class="rank">#${index + 1}</span><div><div class="runner-name-container">${getRunnerIconHTML(run.name, isExportMode)}<span class="runner-name">${escapeHTML(getCleanDisplayName(run.name))}</span></div><div class="stats-badges">${b}</div></div></div><div class="right-side-container"><div class="time-block"><span class="runner-time">${run.timeString}</span>${diffHTML}</div>${actionButtonsHTML}</div>`;
+                // Medaillen- und Platzierungs-Logik (nur für Reguläre Läufe)
+                let rankStr = '';
+                if (run.status === "REGULÄR") {
+                    if (index === 0) rankStr = '🥇';
+                    else if (index === 1) rankStr = '🥈';
+                    else if (index === 2) rankStr = '🥉';
+                    else rankStr = `#${index + 1}`;
+                }
+
+                li.innerHTML = `<div class="runner-info"><span class="rank">${rankStr}</span><div><div class="runner-name-container">${getRunnerIconHTML(run.name, isExportMode)}<span class="runner-name">${escapeHTML(getCleanDisplayName(run.name))}</span></div><div class="stats-badges">${b}</div></div></div><div class="right-side-container"><div class="time-block"><span class="runner-time">${run.timeString}</span>${diffHTML}</div>${actionButtonsHTML}</div>`;
                 ol.appendChild(li);
             });
             if (!isExportMode && popupWindow && !popupWindow.closed) syncPopupLeaderboard();
@@ -1011,11 +1020,19 @@
                     let diffHTML = '';
                     if ((run.status === "REGULÄR" || run.status === "DNQ") && bestTimeMs !== null) {
                         const diffMs = run.timeMs - bestTimeMs;
-                        // Leinwand-Ansicht ebenfalls gestapelt formatieren
                         if (diffMs > 0) diffHTML = `<div style="font-size:0.8rem; color:var(--danger); text-align:right; font-family:'Courier New',monospace; font-weight:bold; margin-top:2px;">+${formatTime(diffMs)}</div>`;
                     }
 
-                    li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">#${index+1}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center;"><div class="pop-time">${run.timeString}</div>${diffHTML}</div>`; 
+                    // Medaillen- und Platzierungs-Logik (nur für Reguläre Läufe)
+                    let rankStr = '';
+                    if (run.status === "REGULÄR") {
+                        if (index === 0) rankStr = '🥇';
+                        else if (index === 1) rankStr = '🥈';
+                        else if (index === 2) rankStr = '🥉';
+                        else rankStr = `#${index + 1}`;
+                    }
+
+                    li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">${rankStr}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center;"><div class="pop-time">${run.timeString}</div>${diffHTML}</div>`; 
                     pOl.appendChild(li); 
                 });
             }

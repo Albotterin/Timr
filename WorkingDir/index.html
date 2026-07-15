@@ -931,12 +931,13 @@
                     if (diffMs > 0) diffHTML = `<span class="runner-diff">+${formatTime(diffMs)}</span>`;
                 }
 
-                // Medaillen-Logik
-                let rankStr = `#${index + 1}`;
-                if (run.status === "REGULÄR" || run.status === "DNQ") {
+                // Medaillen- und Platzierungs-Logik (nur für Reguläre Läufe)
+                let rankStr = '';
+                if (run.status === "REGULÄR") {
                     if (index === 0) rankStr = '🥇';
                     else if (index === 1) rankStr = '🥈';
                     else if (index === 2) rankStr = '🥉';
+                    else rankStr = `#${index + 1}`;
                 }
 
                 li.innerHTML = `<div class="runner-info"><span class="rank">${rankStr}</span><div><div class="runner-name-container">${getRunnerIconHTML(run.name, isExportMode)}<span class="runner-name">${escapeHTML(getCleanDisplayName(run.name))}</span></div><div class="stats-badges">${b}</div></div></div><div class="right-side-container"><div class="time-block"><span class="runner-time">${run.timeString}</span>${diffHTML}</div>${actionButtonsHTML}</div>`;
@@ -1022,12 +1023,13 @@
                         if (diffMs > 0) diffHTML = `<div style="font-size:0.8rem; color:var(--danger); text-align:right; font-family:'Courier New',monospace; font-weight:bold; margin-top:2px;">+${formatTime(diffMs)}</div>`;
                     }
 
-                    // Medaillen-Logik
-                    let rankStr = `#${index + 1}`;
-                    if (run.status === "REGULÄR" || run.status === "DNQ") {
+                    // Medaillen- und Platzierungs-Logik (nur für Reguläre Läufe)
+                    let rankStr = '';
+                    if (run.status === "REGULÄR") {
                         if (index === 0) rankStr = '🥇';
                         else if (index === 1) rankStr = '🥈';
                         else if (index === 2) rankStr = '🥉';
+                        else rankStr = `#${index + 1}`;
                     }
 
                     li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">${rankStr}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center;"><div class="pop-time">${run.timeString}</div>${diffHTML}</div>`; 
