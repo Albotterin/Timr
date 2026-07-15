@@ -72,6 +72,7 @@
                 <select id="eventSelect" class="event-select" onchange="handleEventSelectChange()"></select>
                 <div class="event-buttons-row">
                     <div class="event-btn-cell"><button class="btn-event-action btn-create-event" onclick="openEventCreationModal()" title="Neuen Lauf anlegen">+</button></div>
+                    <div class="event-btn-cell"><button id="renameEventBtn" class="btn-event-action" style="background-color: var(--warning); color: #333;" onclick="openEventRenameModal()" title="Lauf umbenennen">✏️</button></div>
                     <div class="event-btn-cell"><button id="lockEventBtn" class="btn-event-action btn-lock-event" onclick="toggleLockCurrentEvent()" title="Lauf abschließen/öffnen">🔒</button></div>
                     <div class="event-btn-cell"><button class="btn-event-action btn-delete-event" onclick="deleteCurrentEvent()" title="Diesen Lauf löschen">🗑️</button></div>
                 </div>
@@ -284,6 +285,21 @@
             </div>
         </div>
     </div>
+    
+        <div id="eventRenameModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="lblEventRenameModalTitle" style="margin-top:0; color: var(--primary);">Lauf umbenennen</h3>
+            <div class="form-group">
+                <label id="lblNewEventNameLabel" for="renameEventName">Neuer Name des Events:</label>
+                <input type="text" id="renameEventName" autocomplete="off">
+            </div>
+            <div class="modal-actions">
+                <button id="lblRenameModalCancel" class="btn" style="background-color: var(--text-light);" onclick="closeEventRenameModal()">Abbrechen</button>
+                <button id="lblRenameModalSave" class="btn" style="background-color: var(--success);" onclick="renameCurrentEvent()">Umbenennen</button>
+            </div>
+        </div>
+    </div>
+
 
         <div id="trashModal" class="custom-modal">
         <div class="modal-content" style="max-width: 550px;">

@@ -988,3 +988,67 @@
             trash.runs = trash.runs.filter(r => r.trashId !== trashId);
             localStorage.setItem('runnerTrash', JSON.stringify(trash)); openTrashModal();
         }
+
+        // --- EVENT UMBENENNEN LOGIK ---
+function openEventRenameModal() {
+    if (currentEvent === 'Standardlauf') {
+        alert(translations['lblErrorCannotRenameStandard'] || "Der Standardlauf kann nicht umbenannt werden.");
+        return;
+    }
+    document.getElementById('eventRenameModal').style.display = 'flex';
+    document.getElementById('renameEventName').value = currentEvent;
+    document.getElementById('renameEventName').focus();
+}
+
+function closeEventRenameModal() {
+    document.getElementById('eventRenameModal').style.display = 'none';
+    document.getElementById('renameEventName').value = '';
+}
+
+function renameCurrentEvent() {
+    const oldName = currentEvent;
+    const newName = document.getElementById('renameEventName').value.trim();
+    
+    if (!newName) {
+        alert(translations['lblErrorNoEventName'] || "Bitte Eventnamen eingeben.");
+        return;
+    }
+    if (newName === oldName) {
+        closeEventRenameModal();
+        return;
+    }
+    if (eventList.includes(newName)) {
+        alert(translations['lblErrorEventExists'] || "Dieses Event existiert bereits.");
+        return;
+    }
+
+    // 1. In der Event-Liste (Dropdown-Daten) aktualisieren
+    const index = eventList.indexOf(oldName);
+    if (index !== -1) {
+        eventList[index] = newName;
+        localStorage.setItem('runnerEventList', JSON.stringify(eventList));
+    }
+
+    // 2. Status in den gesperrten Events migrieren
+    const lockIndex = lockedEvents.indexOf(oldName);
+    if (lockIndex !== -1) {
+        lockedEvents[lockIndex] = newName;
+        localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents));
+    }
+
+    // 3. Bestenliste im LocalStorage komplett auf den neuen Key übertragen
+    const leaderboardData = localStorage.getItem(`runnerLeaderboard_${oldName}`);
+    if (leaderboardData) {
+        localStorage.setItem(`runnerLeaderboard_${newName}`, leaderboardData);
+        localStorage.removeItem(`runnerLeaderboard_${oldName}`);
+    }
+
+    // 4. Aktiven Lauf-Zeiger umstellen und speichern
+    currentEvent = newName;
+    localStorage.setItem('runnerCurrentEventName', currentEvent);
+
+    // Benutzeroberfläche neu zeichnen
+    buildEventSelectMenu();
+    loadRunsForCurrentEvent();
+    closeEventRenameModal();
+}
