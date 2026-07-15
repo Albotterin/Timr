@@ -18,9 +18,8 @@
 1.35.4=Fixed Watermark
 1.35.5=Fixed wrong translation for penalties and Bonus Es
 1.35.6=Added Button to Delete all Data
-1.35.7=Fixed Messing translation
+1.35.7=Fixed Missing translation
 1.35.8=Added Time Diff in Leaderboard and fixed small issues
 1.35.9=Moved JS into own file
 1.35.10=Implemented Standard Competition Ranking
 1.35.11=Reworked Changelog
-1.36.0=Added Trash Management
