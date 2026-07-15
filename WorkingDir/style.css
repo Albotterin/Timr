@@ -182,8 +182,37 @@ h2 { margin: 0; color: var(--primary); font-size: 1.5rem; flex-grow: 1; }
 .badge-bonus { background-color: var(--bonus); }
 .badge-status { background-color: var(--status-color); }
 
-.right-side-container { display: flex; align-items: center; gap: 10px; width: 130px; justify-content: flex-end; flex-shrink: 0; }
-.runner-time { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: var(--primary); }
+
+.right-side-container { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    min-width: 130px; /* Geändert von width auf min-width */
+    justify-content: flex-end; 
+    flex-shrink: 0; 
+}
+
+.time-block { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-end; 
+    justify-content: center;
+    line-height: 1.2; /* Sorgt für einen schönen Abstand zwischen den beiden Zeiten */
+}
+
+.runner-time { 
+    font-family: 'Courier New', Courier, monospace; 
+    font-weight: bold; 
+    color: var(--primary); 
+}
+
+.runner-diff { 
+    font-family: 'Courier New', Courier, monospace; 
+    font-size: 0.8rem; /* Kleinere, filigranere Schrift */
+    font-weight: bold; 
+    color: var(--danger); /* Erzwingt das Rot */
+    margin-top: 2px;
+}
 
 .action-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; transition: color 0.2s; padding: 0 4px; color: var(--text-light); flex-shrink: 0; }
 .edit-btn:hover { color: var(--accent); }
@@ -260,6 +289,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus { border-colo
 .pdf-export-mode .badge-status { background-color: #7f8c8d !important; }
 .pdf-export-mode .leaderboard-header { border-color: #cccccc !important; }
 .pdf-export-mode .action-btn { display: none !important; }
+.pdf-export-mode .runner-diff { color: #c0392b !important; }
 
 .app-footer { margin-top: 40px; margin-bottom: 20px; font-size: 0.85rem; color: var(--text-light); text-align: center; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 

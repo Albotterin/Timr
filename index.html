@@ -914,16 +914,31 @@
             const ol = document.getElementById('leaderboard'); ol.innerHTML = "";
             document.getElementById('leaderboardHeader').style.display = runs.length > 0 ? 'flex' : 'none';
             if (runs.length === 0) { ol.innerHTML = `<li class="empty-state">${translations['lblEmptyLeaderboard'] || 'Noch keine Läufe.'}</li>`; if (popupWindow && !popupWindow.closed) syncPopupLeaderboard(); return; }
+            
+            // Bestzeit für Differenzberechnung ermitteln (erster regulärer oder DNQ Lauf)
+            const bestRun = runs.find(r => r.status === "REGULÄR" || r.status === "DNQ");
+            const bestTimeMs = bestRun ? bestRun.timeMs : null;
+
             runs.forEach((run, index) => {
                 const li = document.createElement('li'); li.className = "leaderboard-item";
                 let b = ''; if (run.status !== "REGULÄR") b += `<span class="badge badge-status">${run.status}</span>`; if (run.penalties?.time > 0) b += `<span class="badge badge-penalty">${run.penalties.count}x (+${run.penalties.time}s)</span>`; if (run.bonuses?.time > 0) b += `<span class="badge badge-bonus">${run.bonuses.count}x (-${run.bonuses.time}s)</span>`;
                 let actionButtonsHTML = isExportMode ? '' : `<button class="action-btn edit-btn" onclick="openEditModal(${run.id})">📝</button><button class="action-btn delete-btn" onclick="deleteRun(${run.id})">&times;</button>`;
                 
-                li.innerHTML = `<div class="runner-info"><span class="rank">#${index + 1}</span><div><div class="runner-name-container">${getRunnerIconHTML(run.name, isExportMode)}<span class="runner-name">${escapeHTML(getCleanDisplayName(run.name))}</span></div><div class="stats-badges">${b}</div></div></div><div class="right-side-container"><span class="runner-time">${run.timeString}</span>${actionButtonsHTML}</div>`;
+                // Differenz-HTML aufbauen (jetzt auch für DNQ)
+                let diffHTML = '';
+                if ((run.status === "REGULÄR" || run.status === "DNQ") && bestTimeMs !== null) {
+                    const diffMs = run.timeMs - bestTimeMs;
+                    if (diffMs > 0) diffHTML = `<span class="runner-diff">+${formatTime(diffMs)}</span>`;
+                }
+
+                li.innerHTML = `<div class="runner-info"><span class="rank">#${index + 1}</span><div><div class="runner-name-container">${getRunnerIconHTML(run.name, isExportMode)}<span class="runner-name">${escapeHTML(getCleanDisplayName(run.name))}</span></div><div class="stats-badges">${b}</div></div></div><div class="right-side-container"><div class="time-block"><span class="runner-time">${run.timeString}</span>${diffHTML}</div>${actionButtonsHTML}</div>`;
                 ol.appendChild(li);
             });
             if (!isExportMode && popupWindow && !popupWindow.closed) syncPopupLeaderboard();
         }
+
+        
+        
         function deleteRun(id) { runs = runs.filter(r => r.id !== id); saveRunsForCurrentEvent(); sortAndDisplayRuns(); }
 
         function openEditModal(id) {
@@ -984,11 +999,31 @@
             popupWindow.document.getElementById('pPopHeader').innerText = translations['lblLeaderboardTitle'] || "🏆 Bestenliste";
             const pOl = popupWindow.document.getElementById('pLeaderboard'); pOl.innerHTML = "";
             if (runs.length === 0) pOl.innerHTML = `<li style="text-align:center;color:#7f8c8d;font-style:italic;padding-top:20px;">${translations['lblEmptyLeaderboard'] || 'Keine Läufe'}</li>`;
-            else runs.forEach((run, index) => { const li = popupWindow.document.createElement('li'); li.className = "pop-item"; let tags = (run.status !== "REGULÄR" ? `<span class="p-badge pb-s">${run.status}</span>` : '') + (run.penalties?.time > 0 ? `<span class="p-badge pb-p">+${run.penalties.time}s</span>` : '') + (run.bonuses?.time > 0 ? `<span class="p-badge pb-b">-${run.bonuses.time}s</span>` : ''); li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">#${index+1}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div class="pop-time">${run.timeString}</div>`; pOl.appendChild(li); });
+            else {
+                // Auch in der Leinwand die Bestzeit suchen
+                const bestRun = runs.find(r => r.status === "REGULÄR" || r.status === "DNQ");
+                const bestTimeMs = bestRun ? bestRun.timeMs : null;
+
+                runs.forEach((run, index) => { 
+                    const li = popupWindow.document.createElement('li'); li.className = "pop-item"; 
+                    let tags = (run.status !== "REGULÄR" ? `<span class="p-badge pb-s">${run.status}</span>` : '') + (run.penalties?.time > 0 ? `<span class="p-badge pb-p">+${run.penalties.time}s</span>` : '') + (run.bonuses?.time > 0 ? `<span class="p-badge pb-b">-${run.bonuses.time}s</span>` : ''); 
+                    
+                    let diffHTML = '';
+                    if ((run.status === "REGULÄR" || run.status === "DNQ") && bestTimeMs !== null) {
+                        const diffMs = run.timeMs - bestTimeMs;
+                        // Leinwand-Ansicht ebenfalls gestapelt formatieren
+                        if (diffMs > 0) diffHTML = `<div style="font-size:0.8rem; color:var(--danger); text-align:right; font-family:'Courier New',monospace; font-weight:bold; margin-top:2px;">+${formatTime(diffMs)}</div>`;
+                    }
+
+                    li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">#${index+1}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center;"><div class="pop-time">${run.timeString}</div>${diffHTML}</div>`; 
+                    pOl.appendChild(li); 
+                });
+            }
             const leftPane = popupWindow.document.getElementById('pLeftPane');
             if(activeTab === 'single') { if(!popupWindow.document.getElementById('pDisplay')) { leftPane.innerHTML = '<div id="pRunnerName">Bereit...</div><div id="pDisplay">00:00:00.00</div><div id="pNotice"></div>'; syncPopupRunnerName(); syncPopupNotice(); } }
             else { if(groupRunners.length === 0) leftPane.innerHTML = `<div style="font-size:2rem; font-weight:bold; color:var(--text-light)">${translations['lblGroupSetup'] || 'Gruppenlauf: Bereitstellung...'}</div>`; else leftPane.innerHTML = `<div class="multi-grid">${groupRunners.map(r => `<div class="multi-box"><div class="multi-name">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR'?'['+r.status+']':''}</div><div class="multi-time">${r.status==='DNF'||r.status==='DNS'?r.status:formatTime(r.timeMs)}</div><div style="font-size:0.9rem; color:var(--text-light)">${translations['lblEditPenaltyCount'] || 'Strafen'}: +${r.penalties.time}s | ${translations['lblEditBonusCount'] || 'Boni'}: -${r.bonuses.time}s</div></div>`).join('')}</div>`; }
         }
+        
 
         function prepareExportStyles() {
     const element = document.getElementById('leaderboardCard');
