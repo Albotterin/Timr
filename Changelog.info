@@ -27,3 +27,4 @@
 1.36.1=Added Rename Function for Events
 1.36.2=Added Function to copy and move runs between events
 1.36.3=Fixed issue with data integrity when restoring a run
+1.36.4=Moved Event settings into own menu dropdown

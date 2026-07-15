@@ -67,17 +67,25 @@
 
     <div class="container">
         <!-- Event-Bereich -->
-        <div class="card event-setting">
+            <div class="card event-setting">
             <div class="event-management-block">
-                <select id="eventSelect" class="event-select" onchange="handleEventSelectChange()"></select>
-                <div class="event-buttons-row">
-                    <div class="event-btn-cell"><button class="btn-event-action btn-create-event" onclick="openEventCreationModal()" title="Neuen Lauf anlegen">+</button></div>
-                    <div class="event-btn-cell"><button id="renameEventBtn" class="btn-event-action" style="background-color: var(--warning); color: #333;" onclick="openEventRenameModal()" title="Lauf umbenennen">✏️</button></div>
-                    <div class="event-btn-cell"><button id="lockEventBtn" class="btn-event-action btn-lock-event" onclick="toggleLockCurrentEvent()" title="Lauf abschließen/öffnen">🔒</button></div>
-                    <div class="event-btn-cell"><button class="btn-event-action btn-delete-event" onclick="deleteCurrentEvent()" title="Diesen Lauf löschen">🗑️</button></div>
+                <div class="event-management-container">
+                    <select id="eventSelect" class="event-select" onchange="handleEventSelectChange()"></select>
+                    
+                    <button class="theme-toggle-btn btn-event-trigger" onclick="openEventCreationModal()" title="Neuen Lauf anlegen">+</button>
+                    
+                    <div class="dropdown">
+                        <button class="theme-toggle-btn btn-event-trigger" title="Lauf-Optionen">⋮</button>
+                        <div class="dropdown-content" style="right: 0; top: 100%;">
+                            <button onclick="openEventRenameModal()"><span id="lblEventActionRename">✏️ Umbenennen</span></button>
+                            <button onclick="toggleLockCurrentEvent()"><span id="lblEventActionLock">🔒 Sperren</span></button>
+                            <button onclick="deleteCurrentEvent()" style="color: var(--danger);"><span id="lblEventActionDelete">🗑️ Löschen</span></button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
         
         <!-- Bereich 1: Bestenliste -->
         <div class="card" id="leaderboardCard">

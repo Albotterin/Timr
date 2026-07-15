@@ -633,7 +633,21 @@
         }
         
         function toggleLockCurrentEvent() { if (isRunning || groupRunners.length > 0) { alert(translations['lblTabSwitchBlock'] || "Blockiert während Messung."); return; } if(lockedEvents.includes(currentEvent)) lockedEvents = lockedEvents.filter(e => e !== currentEvent); else lockedEvents.push(currentEvent); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); buildEventSelectMenu(); resetForm(); }
-        function updateLockBtnStyle() { const btn = document.getElementById('lockEventBtn'); const isLocked = lockedEvents.includes(currentEvent); btn.innerText = isLocked ? "🔓" : "🔒"; btn.className = isLocked ? "btn-event-action btn-lock-event is-locked" : "btn-event-action btn-lock-event"; }
+        
+        
+       function updateLockBtnStyle() {
+    const span = document.getElementById('lblEventActionLock');
+    if (!span) return;
+    
+    const isLocked = lockedEvents.includes(currentEvent);
+    if (isLocked) {
+        span.innerText = translations['lblEventActionUnlock'] || "🔓 Entsperren";
+    } else {
+        span.innerText = translations['lblEventActionLock'] || "🔒 Sperren";
+    }
+}
+
+        
         function loadRunsForCurrentEvent() { runs = JSON.parse(localStorage.getItem(`runnerLeaderboard_${currentEvent}`)) || []; sortAndDisplayRuns(); }
         function saveRunsForCurrentEvent() { localStorage.setItem(`runnerLeaderboard_${currentEvent}`, JSON.stringify(runs)); }
 
