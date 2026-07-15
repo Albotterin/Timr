@@ -336,6 +336,26 @@
             </div>
         </div>
     </div>
+    
+        <div id="restoreMissingModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="lblRestoreMissingTitle" style="margin-top:0; color: var(--primary);">Event nicht gefunden</h3>
+            <p id="lblRestoreMissingDesc" style="font-size:0.9rem; color:var(--text-light); margin-bottom:15px;">
+                Das ursprüngliche Event dieses Laufs existiert nicht mehr. Bitte wählt ein neues Ziel-Event:
+            </p>
+            <input type="hidden" id="restoreMissingTrashId">
+            
+            <div class="form-group">
+                <select id="restoreMissingTargetEvent" class="event-select" style="font-size: 1rem;"></select>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="lblRestoreMissingCancel" class="btn" style="background-color: var(--text-light);" onclick="closeRestoreMissingModal()">Abbrechen</button>
+                <button id="lblRestoreMissingSubmit" class="btn" style="background-color: var(--success);" onclick="submitRestoreMissing()">Wiederherstellen</button>
+            </div>
+        </div>
+    </div>
+
 
 
      <script src="script.js"></script>

@@ -976,22 +976,77 @@
             localStorage.setItem('runnerTrash', JSON.stringify(trash)); openTrashModal();
         }
 
-        function restoreTrashRun(trashId) {
+                function restoreTrashRun(trashId) {
             let trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
             const index = trash.runs.findIndex(r => r.trashId === trashId);
             if(index === -1) return;
             const tr = trash.runs[index];
 
-            if (!eventList.includes(tr.eventName)) { alert(translations['lblErrorRestoreNoEvent'] || "Event fehlt."); return; }
+            // Wenn das Ursprungs-Event gelöscht wurde -> Neues Fenster öffnen
+            if (!eventList.includes(tr.eventName)) { 
+                openRestoreMissingModal(trashId);
+                return; 
+            }
 
+            // Normaler Ablauf, wenn Event noch existiert
             let eventRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${tr.eventName}`)) || [];
             eventRuns.push(tr.runData);
             localStorage.setItem(`runnerLeaderboard_${tr.eventName}`, JSON.stringify(eventRuns));
 
             if (currentEvent === tr.eventName) { runs = eventRuns; sortAndDisplayRuns(); }
 
-            trash.runs.splice(index, 1); localStorage.setItem('runnerTrash', JSON.stringify(trash)); openTrashModal();
+            trash.runs.splice(index, 1); 
+            localStorage.setItem('runnerTrash', JSON.stringify(trash)); 
+            openTrashModal(); // Papierkorb aktualisieren
         }
+
+        // --- NEU: LOGIK WENN EVENT BEIM WIEDERHERSTELLEN FEHLT ---
+        function openRestoreMissingModal(trashId) {
+            document.getElementById('restoreMissingTrashId').value = trashId;
+            const select = document.getElementById('restoreMissingTargetEvent');
+            select.innerHTML = '';
+            
+            eventList.forEach(ev => {
+                const opt = document.createElement('option');
+                opt.value = ev;
+                opt.innerText = (lockedEvents.includes(ev) ? '🔒 ' : '') + (ev === 'Standardlauf' ? (translations['lblStandardRun'] || 'Standardlauf') : '🏆 ' + ev);
+                select.appendChild(opt);
+            });
+            
+            // Papierkorb kurz ausblenden, damit das neue Fenster im Fokus steht
+            document.getElementById('trashModal').style.display = 'none'; 
+            document.getElementById('restoreMissingModal').style.display = 'flex';
+        }
+
+        function closeRestoreMissingModal() {
+            document.getElementById('restoreMissingModal').style.display = 'none';
+            document.getElementById('trashModal').style.display = 'flex'; // Papierkorb wieder zeigen
+        }
+
+        function submitRestoreMissing() {
+            const trashId = parseFloat(document.getElementById('restoreMissingTrashId').value);
+            const targetEvent = document.getElementById('restoreMissingTargetEvent').value;
+            
+            let trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
+            const index = trash.runs.findIndex(r => r.trashId === trashId);
+            if(index === -1) { closeRestoreMissingModal(); return; }
+            const tr = trash.runs[index];
+
+            // In das neu gewählte Event einfügen
+            let eventRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${targetEvent}`)) || [];
+            eventRuns.push(tr.runData);
+            localStorage.setItem(`runnerLeaderboard_${targetEvent}`, JSON.stringify(eventRuns));
+
+            if (currentEvent === targetEvent) { runs = eventRuns; sortAndDisplayRuns(); }
+
+            // Aus Papierkorb entfernen
+            trash.runs.splice(index, 1); 
+            localStorage.setItem('runnerTrash', JSON.stringify(trash)); 
+            
+            document.getElementById('restoreMissingModal').style.display = 'none';
+            openTrashModal(); // Papierkorb mit frischen Daten wieder öffnen
+        }
+
 
         function permDeleteTrashRun(trashId) {
             let trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
@@ -1051,6 +1106,20 @@ function renameCurrentEvent() {
     if (leaderboardData) {
         localStorage.setItem(`runnerLeaderboard_${newName}`, leaderboardData);
         localStorage.removeItem(`runnerLeaderboard_${oldName}`);
+    }
+    // NEU: 3.5 Papierkorb migrieren ---
+    let trash = JSON.parse(localStorage.getItem('runnerTrash'));
+    if (trash && trash.runs) {
+        let trashChanged = false;
+        trash.runs.forEach(tr => {
+            if (tr.eventName === oldName) {
+                tr.eventName = newName; // Heimat aktualisieren
+                trashChanged = true;
+            }
+        });
+        if (trashChanged) {
+            localStorage.setItem('runnerTrash', JSON.stringify(trash));
+        }
     }
 
     // 4. Aktiven Lauf-Zeiger umstellen und speichern
