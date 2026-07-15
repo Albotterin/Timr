@@ -319,6 +319,24 @@
         </div>
     </div>
 
+        <div id="transferModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="lblTransferModalTitle" style="margin-top:0; color: var(--primary);">Lauf übertragen</h3>
+            <input type="hidden" id="transferRunId">
+            <input type="hidden" id="transferMode">
+            
+            <div class="form-group">
+                <label id="lblTransferTargetEvent" for="transferTargetEvent">Ziel-Event auswählen:</label>
+                <select id="transferTargetEvent" class="event-select" style="font-size: 1rem;"></select>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="lblTransferCancel" class="btn" style="background-color: var(--text-light);" onclick="closeTransferModal()">Abbrechen</button>
+                <button id="lblTransferSubmit" class="btn" style="background-color: var(--success);" onclick="submitTransferRun()">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
 
      <script src="script.js"></script>
      

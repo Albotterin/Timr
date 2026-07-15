@@ -703,8 +703,18 @@
 
                 const li = document.createElement('li'); li.className = "leaderboard-item";
                 let b = ''; if (run.status !== "REGULÄR") b += `<span class="badge badge-status">${run.status}</span>`; if (run.penalties?.time > 0) b += `<span class="badge badge-penalty">${run.penalties.count}x (+${run.penalties.time}s)</span>`; if (run.bonuses?.time > 0) b += `<span class="badge badge-bonus">${run.bonuses.count}x (-${run.bonuses.time}s)</span>`;
-                let actionButtonsHTML = isExportMode ? '' : `<button class="action-btn edit-btn" onclick="openEditModal(${run.id})">📝</button><button class="action-btn delete-btn" onclick="deleteRun(${run.id})">&times;</button>`;
-                
+                                let actionButtonsHTML = isExportMode ? '' : `
+                    <div class="mini-dropdown">
+                        <button class="btn-more-actions">⋮</button>
+                        <div class="mini-dropdown-content">
+                            <button onclick="openEditModal(${run.id})">📝 ${translations['lblActionEdit'] || 'Bearbeiten'}</button>
+                            <button onclick="openTransferModal(${run.id}, 'copy')">📋 ${translations['lblActionCopy'] || 'Kopieren'}</button>
+                            <button onclick="openTransferModal(${run.id}, 'move')">➡️ ${translations['lblActionMove'] || 'Verschieben'}</button>
+                        </div>
+                    </div>
+                    <button class="action-btn delete-btn" onclick="deleteRun(${run.id})">&times;</button>
+                `;
+
                 let diffHTML = '';
                 if ((run.status === "REGULÄR" || run.status === "DNQ") && bestTimeMs !== null) {
                     const diffMs = run.timeMs - bestTimeMs;
@@ -1052,3 +1062,79 @@ function renameCurrentEvent() {
     loadRunsForCurrentEvent();
     closeEventRenameModal();
 }
+
+        // --- TRANSFER LOGIK (KOPIEREN / VERSCHIEBEN) ---
+        function openTransferModal(runId, mode) {
+            const run = runs.find(r => r.id === runId);
+            if (!run) return;
+            
+            document.getElementById('transferRunId').value = runId;
+            document.getElementById('transferMode').value = mode;
+            
+            const titleEl = document.getElementById('lblTransferModalTitle');
+            if (mode === 'copy') {
+                titleEl.innerText = translations['lblTransferModalTitleCopy'] || "Lauf kopieren";
+            } else {
+                titleEl.innerText = translations['lblTransferModalTitleMove'] || "Lauf verschieben";
+            }
+
+            const select = document.getElementById('transferTargetEvent');
+            select.innerHTML = '';
+            let hasOptions = false;
+            
+            // Alle Events außer dem aktuellen auflisten
+            eventList.forEach(ev => {
+                if (ev !== currentEvent) {
+                    const opt = document.createElement('option');
+                    opt.value = ev;
+                    opt.innerText = (lockedEvents.includes(ev) ? '🔒 ' : '') + (ev === 'Standardlauf' ? (translations['lblStandardRun'] || 'Standardlauf') : '🏆 ' + ev);
+                    select.appendChild(opt);
+                    hasOptions = true;
+                }
+            });
+
+            if (!hasOptions) {
+                alert(translations['lblErrorNoOtherEvents'] || "Es gibt keine anderen Events. Bitte legt zuerst ein weiteres an.");
+                return;
+            }
+
+            document.getElementById('transferModal').style.display = 'flex';
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transferModal').style.display = 'none';
+        }
+
+        function submitTransferRun() {
+            const runId = parseFloat(document.getElementById('transferRunId').value);
+            const mode = document.getElementById('transferMode').value;
+            const targetEvent = document.getElementById('transferTargetEvent').value;
+            
+            if (!targetEvent) {
+                alert(translations['lblErrorNoTargetEvent'] || "Bitte ein Ziel-Event auswählen.");
+                return;
+            }
+
+            const runIndex = runs.findIndex(r => r.id === runId);
+            if (runIndex === -1) return;
+            const run = runs[runIndex];
+
+            // Ziel-Laufdaten holen
+            let targetRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${targetEvent}`)) || [];
+            
+            // Tiefe Kopie des Laufes erstellen und neue ID vergeben (verhindert ID-Konflikte)
+            const runCopy = JSON.parse(JSON.stringify(run));
+            runCopy.id = Date.now() + Math.random(); 
+            
+            targetRuns.push(runCopy);
+            localStorage.setItem(`runnerLeaderboard_${targetEvent}`, JSON.stringify(targetRuns));
+
+            // Wenn es "Verschieben" ist, aus dem aktuellen Event löschen
+            if (mode === 'move') {
+                runs.splice(runIndex, 1);
+                saveRunsForCurrentEvent();
+                sortAndDisplayRuns();
+            }
+
+            closeTransferModal();
+        }
