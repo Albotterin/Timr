@@ -10,7 +10,13 @@ A high-performance, lightweight web application for precise timing, specially de
 A hosted version can be found here: https://timr.mrwoelfel.eu/
 
 ## 🏕️ How it all begun
-I am a scout leader from Vienna/Austria. For our summer camp 2026 I prepeared a short obstacle course with some challenges in between. Before the start I asked if anyone knew an app for timing challanges which allows you to add bonus seconds and penalties. No one knew of such an app and instead of just timing the course with the normal timer app on my phone I quickly promted Gemini to show me some code for such an app. It instantly worked and we used it to track the course. Over time I thought of more and more features and kept promting Gemini to implement them. Well and the result of this madness is....this repo. 
+I am a scout leader from Vienna/Austria and for this years summer camp I planed an obstacle course for our kids to compete in. Our scout camp is located in the middle of nowhere in the woods. So no power, no water but phone reception. During the obstacle course the kids had to complete some challenges which earned them either bonus seconds or penalties. 
+
+The night before I sat at a table with the other leaders and asked if anyone knew of an stopwatch app that allows you to add penalties easily.  No one knew such an app and I couldn't find one online either. (After just like 2 minutes of searching) And because I have an IT Background and obviously couldn't start coding in the middle of nowhere without a Notebook I quickly promoted Google Gemini (the only AI App on my Phone) to make such an App in one HTML page. I quickly hosted it on my Webserver and what can I say: It worked like a charm and I used it for the course.
+
+At night after the event I had some more ideas und kept promoting for fun and that's how that project started.
+
+Well and the result of this madness is....this repo. 
 
 **THE REST OF THIS FILE IS AI GENERATED**
 
