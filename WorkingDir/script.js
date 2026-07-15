@@ -254,18 +254,36 @@
         function loadVersionInfo() { fetch('ver.info').then(res => res.text()).then(v => { document.getElementById('appFooter').innerText = `Version: ${v.trim()}`; }).catch(() => { document.getElementById('appFooter').innerText = 'Version: Lokal / Unbekannt'; }); }
         
         function openChangelogModal() {
-            const contentEl = document.getElementById('changelogContent');
-            contentEl.innerText = translations['lblChangelogLoading'] || "Loading Changelog...";
-            document.getElementById('changelogModal').style.display = 'flex';
+    const container = document.getElementById('changelogContent');
+    container.innerHTML = translations['lblChangelogLoading'] || "Lade Changelog...";
+    document.getElementById('changelogModal').style.display = 'flex';
+    
+    fetch('Changelog.info')
+        .then(res => { if (!res.ok) throw new Error(); return res.text(); })
+        .then(text => { 
+            container.innerHTML = ''; // Leeren
             
-            fetch('Changelog.info')
-                .then(res => { if (!res.ok) throw new Error(); return res.text(); })
-                .then(text => { 
-                    // Invertierung: Letzte Zeile zuerst
-                    contentEl.innerText = text.split('\n').reverse().join('\n').trim(); 
-                })
-                .catch(() => { contentEl.innerText = translations['lblChangelogError'] || "Error loading Changelog."; });
-        }
+            // Invertierung: Letzte Zeile zuerst
+            const lines = text.split('\n').filter(l => l.trim() !== "").reverse();
+            
+            lines.forEach(line => {
+                const parts = line.split('=');
+                const version = parts[0] ? parts[0].trim() : "?";
+                const description = parts[1] ? parts[1].trim() : "";
+                
+                const item = document.createElement('div');
+                item.className = 'changelog-item';
+                item.innerHTML = `
+                    <span class="changelog-version">${version}</span>
+                    <span class="changelog-desc">${description}</span>
+                `;
+                container.appendChild(item);
+            });
+        })
+        .catch(() => { 
+            container.innerHTML = translations['lblChangelogError'] || "Fehler beim Laden des Changelogs."; 
+        });
+}
         
         function closeChangelogModal() { document.getElementById('changelogModal').style.display = 'none'; }
         function closeChangelogModalOnOutsideClick(e) { if(e.target.id === 'changelogModal') closeChangelogModal(); }

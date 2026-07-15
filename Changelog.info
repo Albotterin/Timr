@@ -1,25 +1,25 @@
-1.00.0 Erste Version
-...
-1.31.0 Icons wurden eingeführt
-1.31.5 Icons wurden gefixt
-1.32.0 Changelog wurde eingeführt
-1.32.1 Problem beim Darkmode Toggle behoben
-1.32.2 Export verschönert
-1.33.0 Englisch Support
-1.34.0 URL ex- und import hinzugefügt und JSON ex-und import verbessert
-1.34.1 Buy me a coffee hinzugefügt
-1.34.2 Optionen in eigenes Menü verschoben
-1.34.3 Share Link verkürzt in v2
-1.34.4 Fixed Bestenliste allignment
-1.34.5 Github Implementation
-1.35.0 Unterstützung für dynamische Sprachen
-1.35.1 Fixed Lang Dropdown Allignment
-1.35.2 Inverted Changelog and added Watermark
-1.35.3 Added Fallback for lang Files
-1.35.4 Fixed Watermark
-1.35.5 Fixed wrong translation for penalties and Bonus Es
-1.35.6 Added Button to Delete all Data
-1.35.7 Fixed Messing translation
-1.35.8 Added Time Diff in Leaderboard and fixed small issues
-1.35.9 Moved JS into own file
-1.35.10 Implemented Standard Competition Ranking
+1.00.0=Erste Version
+1.31.0=Icons wurden eingeführt
+1.31.5=Icons wurden gefixt
+1.32.0=Changelog wurde eingeführt
+1.32.1=Problem beim Darkmode Toggle behoben
+1.32.2=Export verschönert
+1.33.0=Englisch Support
+1.34.0=URL ex- und import hinzugefügt und JSON ex-und import verbessert
+1.34.1=Buy me a coffee hinzugefügt
+1.34.2=Optionen in eigenes Menü verschoben
+1.34.3=Share Link verkürzt in v2
+1.34.4=Fixed Bestenliste allignment
+1.34.5=Github Implementation
+1.35.0=Unterstützung für dynamische Sprachen
+1.35.1=Fixed Lang Dropdown Allignment
+1.35.2=Inverted Changelog and added Watermark
+1.35.3=Added Fallback for lang Files
+1.35.4=Fixed Watermark
+1.35.5=Fixed wrong translation for penalties and Bonus Es
+1.35.6=Added Button to Delete all Data
+1.35.7=Fixed Messing translation
+1.35.8=Added Time Diff in Leaderboard and fixed small issues
+1.35.9=Moved JS into own file
+1.35.10=Implemented Standard Competition Ranking
+1.35.11=Reworked Changelog

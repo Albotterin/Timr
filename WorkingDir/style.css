@@ -296,4 +296,32 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus { border-colo
 .changelog-link { color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
 .changelog-link:hover { opacity: 0.8; text-decoration: underline; }
 
-.changelog-pre { font-family: 'Consolas', 'Courier New', Courier, monospace; background: var(--bg-color); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); white-space: pre-wrap; word-break: break-all; text-align: left; max-height: 250px; overflow-y: auto; color: var(--text); }
+.changelog-list { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    max-height: 300px; 
+    overflow-y: auto; 
+    padding-right: 5px;
+}
+
+.changelog-item { 
+    border-left: 3px solid var(--accent); 
+    padding: 8px 12px; 
+    background: var(--bg-color); 
+    border-radius: 0 6px 6px 0;
+}
+
+.changelog-version { 
+    font-weight: bold; 
+    color: var(--accent); 
+    display: block; 
+    margin-bottom: 2px; 
+    font-size: 0.95rem; 
+}
+
+.changelog-desc { 
+    font-size: 0.9rem; 
+    color: var(--text); 
+    line-height: 1.4; 
+}

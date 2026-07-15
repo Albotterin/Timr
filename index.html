@@ -211,17 +211,17 @@
     </div>
 
     <!-- Changelog Fenster -->
-    <div id="changelogModal" class="custom-modal" onclick="closeChangelogModalOnOutsideClick(event)">
-        <div class="modal-content">
-            <h3 style="margin-top:0; color: var(--primary);">📋 Changelog</h3>
-            <div class="form-group">
-                <pre id="changelogContent" class="changelog-pre">Lädt Changelog...</pre>
-            </div>
-            <div class="modal-actions">
-                <button id="lblChangelogClose" class="btn" style="background-color: var(--accent);" onclick="closeChangelogModal()">Schließen</button>
-            </div>
+<div id="changelogModal" class="custom-modal" onclick="closeChangelogModalOnOutsideClick(event)">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color: var(--primary);">📋 Changelog</h3>
+        <div class="form-group">
+            <div id="changelogContent" class="changelog-list">Lädt Changelog...</div>
+        </div>
+        <div class="modal-actions">
+            <button id="lblChangelogClose" class="btn" style="background-color: var(--accent);" onclick="closeChangelogModal()">Schließen</button>
         </div>
     </div>
+</div>
 
     <div id="editModal" class="custom-modal">
         <div class="modal-content">
