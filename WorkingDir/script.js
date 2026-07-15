@@ -829,35 +829,53 @@
         function syncPopupTime(t) { if (popupWindow && !popupWindow.closed && activeTab === 'single') popupWindow.document.getElementById('pDisplay').innerText = t; }
         function syncPopupNotice() { if (!popupWindow || popupWindow.closed || activeTab === 'group') return; const el = popupWindow.document.getElementById('pNotice'); if (currentStatus !== "REGULÄR") { el.innerText = `Status: ${currentStatus}`; el.className = "notice-status"; } else { el.innerText = ((penaltyTime > 0 ? `+${penaltyTime}s ` : '') + (bonusTime > 0 ? `-${bonusTime}s` : '')).trim(); el.className = penaltyTime >= bonusTime ? "notice-penalty" : "notice-bonus"; } }
         
-        function syncPopupLeaderboard() {
+                function syncPopupLeaderboard() {
             if (!popupWindow || popupWindow.closed) return;
-            popupWindow.document.getElementById('pPopHeader').innerText = translations['lblLeaderboardTitle'] || "🏆 Bestenliste";
-            const pOl = popupWindow.document.getElementById('pLeaderboard'); pOl.innerHTML = "";
             
+            // 1. Header der Leinwand aktualisieren
+            popupWindow.document.getElementById('pPopHeader').innerText = translations['lblLeaderboardTitle'] || "🏆 Bestenliste";
+            const pOl = popupWindow.document.getElementById('pLeaderboard'); 
+            pOl.innerHTML = "";
+            
+            // 2. Aktuelle Event-Einstellungen (Modus & Zielzeit) abrufen
             const settings = getEventSettings(currentEvent);
             const mode = settings.mode;
             const targetMs = settings.targetTimeMs;
 
-            if (runs.length === 0) pOl.innerHTML = `<li style="text-align:center;color:#7f8c8d;font-style:italic;padding-top:20px;">${translations['lblEmptyLeaderboard'] || 'Keine Läufe'}</li>`;
-            else {
+            if (runs.length === 0) {
+                pOl.innerHTML = `<li style="text-align:center;color:#7f8c8d;font-style:italic;padding-top:20px;">${translations['lblEmptyLeaderboard'] || 'Keine Läufe'}</li>`;
+            } else {
+                // Bestzeit für Fastest/Slowest ermitteln
                 const bestRun = runs.find(r => r.status === "REGULÄR" || r.status === "DNQ");
                 const bestTimeMs = bestRun ? bestRun.timeMs : null;
                 let currentRank = 1;
 
                 runs.forEach((run, index) => { 
+                    // 3. Rang berechnen bei Gleichstand (Standard Competition Ranking)
                     if (index > 0) {
                         const prevRun = runs[index - 1];
                         if ((run.status === "REGULÄR" || run.status === "DNQ") && (prevRun.status === "REGULÄR" || prevRun.status === "DNQ")) {
                             let isSameRank = false;
-                            if (mode === 'target') isSameRank = Math.abs(run.timeMs - targetMs) === Math.abs(prevRun.timeMs - targetMs);
-                            else isSameRank = run.timeMs === prevRun.timeMs;
+                            if (mode === 'target') {
+                                isSameRank = Math.abs(run.timeMs - targetMs) === Math.abs(prevRun.timeMs - targetMs);
+                            } else {
+                                isSameRank = run.timeMs === prevRun.timeMs;
+                            }
                             if (!isSameRank) currentRank = index + 1;
-                        } else if (run.status !== "REGULÄR" && run.status !== "DNQ") { currentRank = index + 1; }
+                        } else if (run.status !== "REGULÄR" && run.status !== "DNQ") { 
+                            currentRank = index + 1; 
+                        }
                     }
 
-                    const li = popupWindow.document.createElement('li'); li.className = "pop-item"; 
-                    let tags = (run.status !== "REGULÄR" ? `<span class="p-badge pb-s">${run.status}</span>` : '') + (run.penalties?.time > 0 ? `<span class="p-badge pb-p">+${run.penalties.time}s</span>` : '') + (run.bonuses?.time > 0 ? `<span class="p-badge pb-b">-${run.bonuses.time}s</span>` : ''); 
+                    const li = popupWindow.document.createElement('li'); 
+                    li.className = "pop-item"; 
                     
+                    // 4. Badges (Status, Strafen, Boni)
+                    let tags = (run.status !== "REGULÄR" ? `<span class="p-badge pb-s">${run.status}</span>` : '') + 
+                               (run.penalties?.time > 0 ? `<span class="p-badge pb-p">+${run.penalties.time}s</span>` : '') + 
+                               (run.bonuses?.time > 0 ? `<span class="p-badge pb-b">-${run.bonuses.time}s</span>` : ''); 
+                    
+                    // 5. Differenzzeit berechnen
                     let diffHTML = '';
                     if ((run.status === "REGULÄR" || run.status === "DNQ")) {
                         if (mode === 'target') {
@@ -866,21 +884,43 @@
                             diffHTML = `<div style="font-size:0.8rem; color:var(--danger); text-align:right; font-family:'Courier New',monospace; font-weight:bold; margin-top:2px;">${sign}${formatTime(Math.abs(diff))}</div>`;
                         } else if (bestTimeMs !== null) {
                             const diffMs = mode === 'slowest' ? bestTimeMs - run.timeMs : run.timeMs - bestTimeMs;
-                            if (diffMs > 0) diffHTML = `<div style="font-size:0.8rem; color:var(--danger); text-align:right; font-family:'Courier New',monospace; font-weight:bold; margin-top:2px;">+${formatTime(diffMs)}</div>`;
+                            if (diffMs > 0) {
+                                diffHTML = `<div style="font-size:0.8rem; color:var(--danger); text-align:right; font-family:'Courier New',monospace; font-weight:bold; margin-top:2px;">+${formatTime(diffMs)}</div>`;
+                            }
                         }
                     }
 
+                    // 6. Platzierung (Medaillen für Top 3)
                     let rankStr = '';
                     if (run.status === "REGULÄR" || run.status === "DNQ") {
-                        if (currentRank === 1) rankStr = '🥇'; else if (currentRank === 2) rankStr = '🥈'; else if (currentRank === 3) rankStr = '🥉'; else rankStr = `#${currentRank}`;
+                        if (currentRank === 1) rankStr = '🥇'; 
+                        else if (currentRank === 2) rankStr = '🥈'; 
+                        else if (currentRank === 3) rankStr = '🥉'; 
+                        else rankStr = `#${currentRank}`;
                     }
 
                     li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">${rankStr}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center;"><div class="pop-time">${run.timeString}</div>${diffHTML}</div>`; 
                     pOl.appendChild(li); 
                 });
             }
-            // (Rest von syncPopupLeaderboard bleibt unangetastet, z.B. leftPane Logik)
+            
+            // 7. Linkes Panel aktualisieren (Aktueller Lauf oder Gruppe)
+            const leftPane = popupWindow.document.getElementById('pLeftPane');
+            if (activeTab === 'single') { 
+                if (!popupWindow.document.getElementById('pDisplay')) { 
+                    leftPane.innerHTML = '<div id="pRunnerName">Bereit...</div><div id="pDisplay">00:00:00.00</div><div id="pNotice"></div>'; 
+                    syncPopupRunnerName(); 
+                    syncPopupNotice(); 
+                } 
+            } else { 
+                if (groupRunners.length === 0) {
+                    leftPane.innerHTML = `<div style="font-size:2rem; font-weight:bold; color:var(--text-light)">${translations['lblGroupSetup'] || 'Gruppenlauf: Bereitstellung...'}</div>`; 
+                } else { 
+                    leftPane.innerHTML = `<div class="multi-grid">${groupRunners.map(r => `<div class="multi-box"><div class="multi-name">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR' ? '[' + r.status + ']' : ''}</div><div class="multi-time">${r.status === 'DNF' || r.status === 'DNS' ? r.status : formatTime(r.timeMs)}</div><div style="font-size:0.9rem; color:var(--text-light)">${translations['lblEditPenaltyCount'] || 'Strafen'}: +${r.penalties.time}s | ${translations['lblEditBonusCount'] || 'Boni'}: -${r.bonuses.time}s</div></div>`).join('')}</div>`; 
+                } 
+            }
         }
+
         
 
         function prepareExportStyles() {
