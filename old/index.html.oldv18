@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeitmessung & Bestenliste</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --penalty: #f39c12;
+            --bonus: #9b59b6;
+            --status-color: #7f8c8d;
+            --text: #333333;
+            --text-light: #7f8c8d;
+            --border-color: #dddddd;
+            --item-hover: #fafafa;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --primary: #ecf0f1;
+            --accent: #5dade2;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --penalty: #e67e22;
+            --bonus: #8e44ad;
+            --status-color: #95a5a6;
+            --text: #e0e0e0;
+            --text-light: #95a5a6;
+            --border-color: #444444;
+            --item-hover: #3a3a3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .top-bar { width: 100%; max-width: 600px; display: flex; justify-content: flex-end; margin-bottom: 15px; }
+        .theme-toggle-btn {
+            background: var(--card-bg); border: 2px solid var(--border-color); color: var(--text);
+            padding: 8px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s;
+        }
+        .theme-toggle-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 25px; }
+        .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; transition: background-color 0.3s, box-shadow 0.3s; }
+        
+        .event-management-row { display: flex; gap: 10px; align-items: center; width: 100%; }
+        .event-select { flex: 1; padding: 12px; font-size: 1.1rem; font-weight: bold; color: var(--primary); border: 2px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); outline: none; cursor: pointer; }
+        .btn-event-action { color: white; border: none; width: 48px; height: 48px; border-radius: 8px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: opacity 0.2s; }
+        .btn-event-action:hover { opacity: 0.9; }
+        .btn-create-event { background-color: var(--accent); font-size: 1.5rem; }
+        .btn-delete-event { background-color: var(--danger); }
+
+        #pdfEventTitle { display: none; margin: 0 0 10px 0; color: #2c3e50; font-size: 1.8rem; text-align: center; }
+        .card-header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; margin-bottom: 15px; gap: 10px; }
+        h2 { margin: 0; color: var(--primary); font-size: 1.5rem; flex-grow: 1; }
+        .header-actions { display: flex; gap: 8px; }
+
+        .btn-action-header {
+            color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.2s;
+        }
+        .btn-action-header:hover { opacity: 0.9; }
+        .btn-pdf { background-color: #8e44ad; }
+        .btn-share { background-color: #27ae60; }
+
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid var(--border-color); transition: background 0.2s; gap: 10px; }
+        .leaderboard-item:last-child { border-bottom: none; }
+        .leaderboard-item:hover { background-color: var(--item-hover); }
+
+        .runner-info { display: flex; align-items: center; gap: 12px; }
+        .rank { font-weight: bold; color: var(--accent); width: 25px; }
+        .runner-name { font-weight: 500; }
+        
+        .stats-badges { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.75rem; margin-top: 4px; font-weight: 600; }
+        .badge { padding: 2px 6px; border-radius: 4px; color: white; }
+        .badge-penalty { background-color: var(--penalty); }
+        .badge-bonus { background-color: var(--bonus); }
+        .badge-status { background-color: var(--status-color); }
+
+        .right-side-container { display: flex; align-items: center; gap: 10px; }
+        .runner-time { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: var(--primary); }
+
+        .action-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; transition: color 0.2s; padding: 0 4px; color: var(--text-light); }
+        .edit-btn:hover { color: var(--accent); }
+        .delete-btn:hover { color: var(--danger); }
+        .empty-state { text-align: center; color: var(--text-light); font-style: italic; padding: 10px 0; }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        label { font-weight: 600; color: var(--primary); }
+
+        input[type="text"], input[type="number"], select {
+            padding: 12px; border: 2px solid var(--border-color); background-color: var(--card-bg);
+            color: var(--text); border-radius: 8px; font-size: 1rem; outline: none;
+            transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--accent); }
+
+        .time-inputs-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .time-input-container { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-light); font-weight: 600; }
+        .time-inputs-row input { width: 100%; box-sizing: border-box; text-align: center; padding: 10px 5px; }
+
+        .stopwatch-display { font-family: 'Courier New', Courier, monospace; font-size: 3rem; text-align: center; font-weight: bold; color: var(--primary); margin: 20px 0; letter-spacing: 2px; }
+        .adjustment-display { text-align: center; font-weight: 600; height: 20px; margin-bottom: 15px; font-size: 1.1rem; }
+        .adjustment-display.penalty { color: var(--danger); }
+        .adjustment-display.bonus { color: var(--success); }
+        .adjustment-display.status-info { color: var(--status-color); }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: opacity 0.2s, transform 0.1s; color: white; display: flex; justify-content: center; align-items: center; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-start { background-color: var(--success); }
+        .btn-pause { background-color: var(--warning); color: #333; }
+        .btn-stop { background-color: var(--danger); }
+        .btn-popup-view { background-color: #34495e; grid-column: span 2; }
+        .btn-save { background-color: var(--accent); grid-column: span 2; }
+
+        .management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; margin-top: 10px; }
+        .btn-add-type { color: white; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: opacity 0.2s; }
+        .btn-add-type.penalty-add { background-color: var(--penalty); }
+        .btn-add-type.bonus-add { background-color: var(--bonus); }
+        .btn-add-type:hover { opacity: 0.9; }
+
+        .dynamic-button-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .custom-btn-container { inline-flex; align-items: center; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: white; display: inline-flex; }
+        .custom-btn-container.type-penalty { background-color: var(--penalty); }
+        .custom-btn-container.type-bonus { background-color: var(--bonus); }
+        .custom-btn-container.type-status { background-color: var(--status-color); }
+
+        .btn-custom-action { background: none; border: none; color: white; padding: 12px 15px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .btn-custom-action:hover:not(:disabled) { background-color: rgba(0, 0, 0, 0.1); }
+        .btn-custom-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .delete-custom-type-btn { background: rgba(0, 0, 0, 0.15); border: none; color: white; padding: 0 10px; align-self: stretch; cursor: pointer; font-size: 1rem; transition: background-color 0.2s; }
+        .delete-custom-type-btn:hover { background-color: var(--danger); }
+
+        .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+        .pdf-export-mode { padding: 30px !important; color: #2c3e50 !important; background: white !important; }
+        .pdf-export-mode h2 { color: #2c3e50 !important; border-bottom: 2px solid #3498db !important; }
+        .pdf-export-mode .runner-time { color: #2c3e50 !important; }
+        .pdf-export-mode .rank { color: #3498db !important; }
+        .pdf-export-mode .badge-penalty { background-color: #e67e22 !important; color: white !important; }
+        .pdf-export-mode .badge-bonus { background-color: #9b59b6 !important; color: white !important; }
+        .pdf-export-mode .badge-status { background-color: #7f8c8d !important; color: white !important; }
+        .pdf-export-mode .action-btn { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+            <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="card event-setting">
+            <div class="event-management-row">
+                <select id="eventSelect" class="event-select" onchange="handleEventSelectChange()"></select>
+                <button class="btn-event-action btn-create-event" onclick="openEventCreationModal()" title="Neuen Lauf anlegen">+</button>
+                <button class="btn-event-action btn-delete-event" onclick="deleteCurrentEvent()" title="Diesen Lauf löschen">🗑️</button>
+            </div>
+        </div>
+        
+        <!-- Bereich 1: Bestenliste -->
+        <div class="card" id="leaderboardCard">
+            <h1 id="pdfEventTitle">Bestenliste</h1>
+            <div class="card-header-container" id="cardHeader">
+                <h2>🏆 Bestenliste</h2>
+                <div class="header-actions">
+                    <button class="btn-action-header btn-share" onclick="shareAsImage()">🔗 Teilen</button>
+                    <button class="btn-action-header btn-pdf" onclick="exportToPDF()">📄 PDF</button>
+                </div>
+            </div>
+            <ol id="leaderboard" class="leaderboard-list"></ol>
+        </div>
+
+        <!-- Bereich 2: Zeitmessung -->
+        <div class="card">
+            <div class="card-header-container">
+                <h2>⏱️ Neuer Lauf</h2>
+            </div>
+            
+            <div class="form-group">
+                <label for="runnerName">Name des Läufers:</label>
+                <input type="text" id="runnerName" placeholder="z.B. Max Mustermann" autocomplete="off" oninput="syncPopupRunnerName()">
+            </div>
+
+            <div class="stopwatch-display" id="display">00:00:00.00</div>
+            <div id="adjustmentNotice" class="adjustment-display"></div>
+
+            <div class="btn-group">
+                <button class="btn btn-start" id="startBtn" onclick="toggleTimer()">Start</button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopTimer()" disabled>Stop</button>
+            </div>
+            
+            <div class="btn-group" style="margin-bottom:20px;">
+                <button class="btn btn-popup-view" onclick="openScreenPopup()">📺 Leinwand-Ansicht öffnen</button>
+            </div>
+
+            <div class="management-header">
+                <label>Strafsekunden hinzufügen (+):</label>
+                <button class="btn-add-type penalty-add" onclick="openModal('add_btn_penalty')">+</button>
+            </div>
+            <div id="dynamicPenaltyGroup" class="dynamic-button-group"></div>
+
+            <div class="management-header">
+                <label>Bonuszeit abziehen (-):</label>
+                <button class="btn-add-type bonus-add" onclick="openModal('add_btn_bonus')">+</button>
+            </div>
+            <div id="dynamicBonusGroup" class="dynamic-button-group"></div>
+
+            <div class="management-header"><label>Spezial-Status setzen:</label></div>
+            <div class="dynamic-button-group">
+                <div class="custom-btn-container type-status"><button id="statusBtnDNS" class="btn-custom-action btn-status-init-action" onclick="handleStatusSet('DNS')">DNS (Nicht gestartet)</button></div>
+                <div class="custom-btn-container type-status"><button id="statusBtnDNF" class="btn-custom-action btn-status-init-action" onclick="handleStatusSet('DNF')">DNF (Abgebrochen)</button></div>
+                <div class="custom-btn-container type-status"><button id="statusBtnDNQ" class="btn-custom-action btn-status-action" disabled onclick="handleStatusSet('DNQ')">DNQ (Nicht qualifiziert)</button></div>
+            </div>
+
+            <div class="btn-group" style="margin-top:20px;">
+                <button class="btn btn-save" id="saveBtn" onclick="saveRun()" disabled>Lauf Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="customModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="modalTitle" style="margin-top:0;">Neuen Button anlegen</h3>
+            <div class="form-group">
+                <label for="newBtnName">Bezeichnung / Name:</label>
+                <input type="text" id="newBtnName" placeholder="z.B. Torfehler">
+            </div>
+            <div class="form-group">
+                <label for="newBtnSeconds">Zeit (in Sekunden):</label>
+                <input type="number" id="newBtnSeconds" placeholder="z.B. 5" min="1">
+            </div>
+            <div class="modal-actions">
+                <button class="btn" style="background-color: var(--text-light);" onclick="closeModal()">Abbrechen</button>
+                <button class="btn" style="background-color: var(--success);" onclick="createNewButton()">Erstellen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="eventModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Neuen Lauf (Event) anlegen</h3>
+            <div class="form-group">
+                <label for="newEventName">Name des Events:</label>
+                <input type="text" id="newEventName" placeholder="z.B. Sommerlauf 2026">
+            </div>
+            <div class="modal-actions">
+                <button class="btn" style="background-color: var(--text-light);" onclick="closeEventModal()">Abbrechen</button>
+                <button class="btn" style="background-color: var(--success);" onclick="createNewEvent()">Anlegen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Eintrag bearbeiten</h3>
+            <input type="hidden" id="editRunId">
+            <div class="form-group">
+                <label for="editRunnerName">Name des Läufers:</label>
+                <input type="text" id="editRunnerName">
+            </div>
+            <div class="form-group">
+                <label for="editStatus">Status:</label>
+                <select id="editStatus" onchange="toggleEditTimeField()">
+                    <option value="REGULÄR">Regulär</option>
+                    <option value="DNQ">DNQ (Nicht qualifiziert)</option>
+                    <option value="DNF">DNF (Abgebrochen)</option>
+                    <option value="DNS">DNS (Nicht gestartet)</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="editTimeGroup">
+                <label>Reine Laufzeit:</label>
+                <div class="time-inputs-row">
+                    <div class="time-input-container">
+                        <input type="number" id="editHours" min="0" max="99" placeholder="00">
+                        <span>Std</span>
+                    </div>
+                    <div class="time-input-container">
+                        <input type="number" id="editMinutes" min="0" max="59" placeholder="00">
+                        <span>Min</span>
+                    </div>
+                    <div class="time-input-container">
+                        <input type="number" id="editSeconds" min="0" max="59" placeholder="00">
+                        <span>Sek</span>
+                    </div>
+                    <div class="time-input-container">
+                        <input type="number" id="editHundredths" min="0" max="99" placeholder="00">
+                        <span>1/100</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="editPenaltyCount">Anzahl Strafen:</label>
+                <input type="number" id="editPenaltyCount" min="0">
+            </div>
+            <div class="form-group">
+                <label for="editPenaltyTime">Strafzeit Gesamt (Sekunden):</label>
+                <input type="number" id="editPenaltyTime" min="0">
+            </div>
+            <div class="form-group">
+                <label for="editBonusCount">Anzahl Boni:</label>
+                <input type="number" id="editBonusCount" min="0">
+            </div>
+            <div class="form-group">
+                <label for="editBonusTime">Bonuszeit Gesamt (Sekunden):</label>
+                <input type="number" id="editBonusTime" min="0">
+            </div>
+            <div class="modal-actions">
+                <button class="btn" style="background-color: var(--text-light);" onclick="closeEditModal()">Abbrechen</button>
+                <button class="btn" style="background-color: var(--accent);" onclick="submitEditRun()">Änderungen speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false, isPaused = false;
+        let startTime = 0, elapsedBeforePause = 0, timerInterval = null, currentTotalMs = 0;
+        let penaltyCount = 0, penaltyTime = 0, bonusCount = 0, bonusTime = 0, currentStatus = "REGULÄR";
+        let currentModalMode = 'add_btn_penalty', popupWindow = null;
+        
+        let currentEvent = 'Standardlauf';
+        let eventList = ['Standardlauf'];
+        let runs = [];
+
+        let penaltyTypes = JSON.parse(localStorage.getItem('runnerPenaltyTypes')) || [
+            { id: 1, name: "Kemler Falsch (+5s)", seconds: 5 },
+            { id: 2, name: "UN Nr. Falsch (+5s)", seconds: 5 },
+            { id: 3, name: "Beide Falsch (+15s)", seconds: 15 }
+        ];
+        let bonusTypes = JSON.parse(localStorage.getItem('runnerBonusTypes')) || [
+            { id: 1, name: "Zusatzaufgabe gelöst (-10s)", seconds: 10 }
+        ];
+
+        window.onload = function() {
+            eventList = JSON.parse(localStorage.getItem('runnerEventList')) || ['Standardlauf'];
+            currentEvent = localStorage.getItem('runnerCurrentEventName') || 'Standardlauf';
+            
+            buildEventSelectMenu();
+            loadRunsForCurrentEvent();
+            renderCustomButtons('penalty');
+            renderCustomButtons('bonus');
+            initTheme();
+            resetForm();
+        };
+
+        window.onunload = function() { if (popupWindow) popupWindow.close(); };
+
+        // --- Event-Management ---
+        function buildEventSelectMenu() {
+            const select = document.getElementById('eventSelect');
+            select.innerHTML = '';
+            eventList.forEach(ev => {
+                const opt = document.createElement('option');
+                opt.value = ev;
+                opt.innerText = ev === 'Standardlauf' ? '🏁 Standardlauf' : `🏆 ${ev}`;
+                if (ev === currentEvent) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function openEventCreationModal() {
+            document.getElementById('eventModal').style.display = 'flex';
+            document.getElementById('newEventName').focus();
+        }
+        function closeEventModal() { document.getElementById('eventModal').style.display = 'none'; document.getElementById('newEventName').value = ''; }
+        
+        function createNewEvent() {
+            const name = document.getElementById('newEventName').value.trim();
+            if (!name || name === 'Standardlauf') { alert('Ungültiger Name.'); return; }
+            if (eventList.includes(name)) { alert('Dieses Event existiert bereits.'); return; }
+            
+            eventList.push(name);
+            localStorage.setItem('runnerEventList', JSON.stringify(eventList));
+            currentEvent = name;
+            localStorage.setItem('runnerCurrentEventName', currentEvent);
+            
+            buildEventSelectMenu();
+            loadRunsForCurrentEvent();
+            closeEventModal();
+        }
+
+        function handleEventSelectChange() {
+            currentEvent = document.getElementById('eventSelect').value;
+            localStorage.setItem('runnerCurrentEventName', currentEvent);
+            loadRunsForCurrentEvent();
+        }
+
+        function deleteCurrentEvent() {
+            if (currentEvent === 'Standardlauf') { alert('Der Standardlauf kann nicht gelöscht werden.'); return; }
+            if (!confirm(`Möchtest du das Event "${currentEvent}" wirklich löschen? Alle zugehörigen Läufe gehen verloren.`)) return;
+
+            const storageKey = `runnerLeaderboard_${currentEvent}`;
+            localStorage.removeItem(storageKey);
+            eventList = eventList.filter(ev => ev !== currentEvent);
+            localStorage.setItem('runnerEventList', JSON.stringify(eventList));
+            currentEvent = 'Standardlauf';
+            localStorage.setItem('runnerCurrentEventName', currentEvent);
+            buildEventSelectMenu();
+            loadRunsForCurrentEvent();
+        }
+
+        function loadRunsForCurrentEvent() {
+            const storageKey = `runnerLeaderboard_${currentEvent}`;
+            runs = JSON.parse(localStorage.getItem(storageKey)) || [];
+            sortAndDisplayRuns();
+        }
+
+        function saveRunsForCurrentEvent() {
+            const storageKey = `runnerLeaderboard_${currentEvent}`;
+            localStorage.setItem(storageKey, JSON.stringify(runs));
+        }
+
+        // --- Dark Mode ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleComponents(savedTheme);
+            syncPopupTheme();
+        }
+        function toggleTheme() {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleComponents(newTheme);
+            syncPopupTheme();
+        }
+        function updateThemeToggleComponents(theme) {
+            const icon = document.getElementById('themeIcon'), text = document.getElementById('themeText');
+            if (theme === 'dark') { icon.innerText = "☀️"; text.innerText = "Light Mode"; }
+            else { icon.innerText = "🌙"; text.innerText = "Dark Mode"; }
+        }
+
+        // --- Knöpfe dynamisch verwalten ---
+        function openModal(mode) {
+            currentModalMode = mode;
+            document.getElementById('modalTitle').innerText = mode === 'add_btn_penalty' ? "Neuen Straf-Button anlegen (+)" : "Neuen Bonus-Button anlegen (-)";
+            document.getElementById('customModal').style.display = 'flex';
+            document.getElementById('newBtnName').focus();
+        }
+        function closeModal() { document.getElementById('customModal').style.display = 'none'; document.getElementById('newBtnName').value = ''; document.getElementById('newBtnSeconds').value = ''; }
+        
+        function createNewButton() {
+            const name = document.getElementById('newBtnName').value.trim(), seconds = parseInt(document.getElementById('newBtnSeconds').value, 10);
+            if (!name || isNaN(seconds) || seconds <= 0) { alert("Ungültige Eingabe."); return; }
+            if (currentModalMode === 'add_btn_penalty') {
+                penaltyTypes.push({ id: Date.now(), name: `${name} (+${seconds}s)`, seconds: seconds });
+                localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes));
+                renderCustomButtons('penalty');
+            } else {
+                bonusTypes.push({ id: Date.now(), name: `${name} (-${seconds}s)`, seconds: seconds });
+                localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes));
+                renderCustomButtons('bonus');
+            }
+            closeModal();
+        }
+
+        function deleteCustomType(id, mode, event) {
+            event.stopPropagation();
+            if (mode === 'penalty') {
+                penaltyTypes = penaltyTypes.filter(p => p.id !== id);
+                localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes));
+                renderCustomButtons('penalty');
+            } else {
+                bonusTypes = bonusTypes.filter(b => b.id !== id);
+                localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes));
+                renderCustomButtons('bonus');
+            }
+        }
+
+        function renderCustomButtons(mode) {
+            const container = document.getElementById(mode === 'penalty' ? 'dynamicPenaltyGroup' : 'dynamicBonusGroup');
+            container.innerHTML = '';
+            const targetArray = mode === 'penalty' ? penaltyTypes : bonusTypes;
+            if (targetArray.length === 0) { container.innerHTML = `<span style="color: var(--text-light); font-style: italic; font-size: 0.9rem;">Keine Buttons.</span>`; return; }
+            
+            const isSaveDisabled = document.getElementById('saveBtn').disabled;
+            targetArray.forEach(item => {
+                const wrapper = document.createElement('div');
+                wrapper.className = `custom-btn-container type-${mode}`;
+                const mainBtn = document.createElement('button');
+                mainBtn.className = 'btn-custom-action';
+                mainBtn.innerText = item.name;
+                mainBtn.disabled = isSaveDisabled;
+                mainBtn.onclick = () => handleTimeAdjustment(mode, item.seconds);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-custom-type-btn'; delBtn.innerHTML = '&times;';
+                delBtn.onclick = (e) => deleteCustomType(item.id, mode, e);
+
+                wrapper.appendChild(mainBtn); wrapper.appendChild(delBtn); container.appendChild(wrapper);
+            });
+        }
+
+        function setActionButtonsDisabled(disabled) {
+            document.querySelectorAll('.btn-custom-action').forEach(btn => btn.disabled = disabled);
+            document.getElementById('statusBtnDNQ').disabled = disabled;
+        }
+
+        function formatTime(totalMilliseconds) {
+            if (totalMilliseconds < 0) totalMilliseconds = 0;
+            let hours = Math.floor(totalMilliseconds / 3600000), minutes = Math.floor((totalMilliseconds % 3600000) / 60000);
+            let seconds = Math.floor((totalMilliseconds % 60000) / 1000), hundredths = Math.floor((totalMilliseconds % 1000) / 10);
+            return ((hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "." + (hundredths < 10 ? "0" : "") + hundredths);
+        }
+
+        // --- Zeitmessung mit Pause-Funktion ---
+        function toggleTimer() {
+            if (!document.getElementById('runnerName').value.trim()) { alert("Bitte Namen eingeben."); return; }
+            
+            const startBtn = document.getElementById('startBtn');
+            
+            if (currentStatus === "DNS" || currentStatus === "DNF") {
+                currentStatus = "REGULÄR";
+                document.getElementById('display').innerText = "00:00:00.00";
+                updateAdjustmentNoticeDisplay();
+            }
+
+            if (!isRunning) {
+                // START
+                isRunning = true;
+                isPaused = false;
+                startTime = Date.now() - elapsedBeforePause;
+                
+                timerInterval = setInterval(() => {
+                    currentTotalMs = Date.now() - startTime;
+                    const formatted = formatTime(currentTotalMs);
+                    document.getElementById('display').innerText = formatted;
+                    syncPopupTime(formatted);
+                }, 10);
+                
+                startBtn.innerText = "Pause";
+                startBtn.className = "btn btn-pause";
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('saveBtn').disabled = true;
+                document.getElementById('runnerName').disabled = true;
+                
+                document.getElementById('statusBtnDNS').disabled = true;
+                document.getElementById('statusBtnDNF').disabled = true;
+                setActionButtonsDisabled(true);
+            } else {
+                // PAUSE
+                isRunning = false;
+                isPaused = true;
+                clearInterval(timerInterval);
+                elapsedBeforePause = currentTotalMs;
+                
+                startBtn.innerText = "Weiter";
+                startBtn.className = "btn btn-start";
+            }
+        }
+
+        function stopTimer() {
+            isRunning = false;
+            isPaused = false;
+            clearInterval(timerInterval);
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('startBtn').innerText = "Start";
+            document.getElementById('startBtn').className = "btn btn-start";
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('saveBtn').disabled = false;
+            setActionButtonsDisabled(false);
+        }
+
+        function handleTimeAdjustment(mode, seconds) {
+            if (currentStatus === "DNF" || currentStatus === "DNS") return;
+            if (mode === 'penalty') { penaltyCount++; penaltyTime += seconds; currentTotalMs += (seconds * 1000); elapsedBeforePause += (seconds * 1000); if(isRunning) startTime -= (seconds * 1000); } 
+            else { bonusCount++; bonusTime += seconds; currentTotalMs -= (seconds * 1000); elapsedBeforePause -= (seconds * 1000); if(isRunning) startTime += (seconds * 1000); }
+            if (currentTotalMs < 0) { currentTotalMs = 0; elapsedBeforePause = 0; if(isRunning) startTime = Date.now(); }
+            
+            const formatted = formatTime(currentTotalMs);
+            document.getElementById('display').innerText = formatted;
+            syncPopupTime(formatted);
+            updateAdjustmentNoticeDisplay();
+        }
+
+        function handleStatusSet(status) {
+            if (!document.getElementById('runnerName').value.trim()) { alert("Bitte Namen eingeben."); return; }
+            
+            currentStatus = status;
+            if (status === "DNF" || status === "DNS") {
+                isRunning = false; isPaused = false;
+                clearInterval(timerInterval);
+                currentTotalMs = 0; elapsedBeforePause = 0;
+                penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0;
+                
+                document.getElementById('display').innerText = "--:--:--.--";
+                syncPopupTime(status);
+                
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('saveBtn').disabled = false;
+                document.getElementById('runnerName').disabled = true;
+            } else if (status === "DNQ") {
+                updateAdjustmentNoticeDisplay();
+            }
+            updateAdjustmentNoticeDisplay();
+        }
+
+        function updateAdjustmentNoticeDisplay() {
+            const notice = document.getElementById('adjustmentNotice');
+            if (currentStatus !== "REGULÄR") {
+                notice.innerText = `Status: ${currentStatus}`;
+                notice.className = "adjustment-display status-info";
+            } else {
+                let text = "";
+                if (penaltyTime > 0) text += `+${penaltyTime}s Strafe `;
+                if (bonusTime > 0) text += `-${bonusTime}s Bonus`;
+                notice.innerText = text.trim();
+                notice.className = `adjustment-display ${penaltyTime >= bonusTime ? 'penalty' : 'bonus'}`;
+            }
+            syncPopupNotice();
+        }
+
+        function saveRun() {
+            runs.push({
+                id: Date.now(), name: document.getElementById('runnerName').value.trim(),
+                timeMs: currentTotalMs, timeString: (currentStatus === "DNF" || currentStatus === "DNS") ? currentStatus : formatTime(currentTotalMs),
+                status: currentStatus, penalties: { count: penaltyCount, time: penaltyTime }, bonuses: { count: bonusCount, time: bonusTime }
+            });
+            saveRunsForCurrentEvent();
+            sortAndDisplayRuns(); resetForm();
+        }
+
+        function resetForm() {
+            isRunning = false; isPaused = false;
+            clearInterval(timerInterval);
+            elapsedBeforePause = 0; currentTotalMs = 0; 
+            penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; currentStatus = "REGULÄR";
+
+            document.getElementById('runnerName').value = ""; 
+            document.getElementById('runnerName').disabled = false;
+            document.getElementById('display').innerText = "00:00:00.00"; 
+            document.getElementById('adjustmentNotice').innerText = "";
+            
+            document.getElementById('startBtn').disabled = false; 
+            document.getElementById('startBtn').innerText = "Start";
+            document.getElementById('startBtn').className = "btn btn-start";
+            document.getElementById('stopBtn').disabled = true; 
+            document.getElementById('saveBtn').disabled = true;
+            
+            document.getElementById('statusBtnDNS').disabled = false;
+            document.getElementById('statusBtnDNF').disabled = false;
+            
+            setActionButtonsDisabled(true);
+            syncPopupRunnerName(); syncPopupTime("00:00:00.00"); syncPopupNotice();
+        }
+
+        function sortAndDisplayRuns() {
+            runs.sort((a, b) => {
+                const statusOrder = { "REGULÄR": 1, "DNQ": 2, "DNF": 3, "DNS": 4 };
+                if (statusOrder[a.status] !== statusOrder[b.status]) {
+                    return statusOrder[a.status] - statusOrder[b.status];
+                }
+                if (a.status === "REGULÄR" || a.status === "DNQ") {
+                    return a.timeMs - b.timeMs;
+                }
+                return a.name.localeCompare(b.name);
+            });
+
+            const ol = document.getElementById('leaderboard'); ol.innerHTML = "";
+            if (runs.length === 0) { ol.innerHTML = '<li class="empty-state">Noch keine Läufe registriert.</li>'; if (popupWindow && !popupWindow.closed) syncPopupLeaderboard(); return; }
+
+            runs.forEach((run, index) => {
+                const li = document.createElement('li'); li.className = "leaderboard-item";
+                let badges = '';
+                if (run.status !== "REGULÄR") badges += `<span class="badge badge-status">${run.status}</span>`;
+                if (run.penalties && run.penalties.count > 0) badges += `<span class="badge badge-penalty">${run.penalties.count}x Strafe (+${run.penalties.time}s)</span>`;
+                if (run.bonuses && run.bonuses.count > 0) badges += `<span class="badge badge-bonus">${run.bonuses.count}x Bonus (-${run.bonuses.time}s)</span>`;
+
+                li.innerHTML = `
+                    <div class="runner-info">
+                        <span class="rank">#${index + 1}</span>
+                        <div>
+                            <div class="runner-name">${escapeHTML(run.name)}</div>
+                            <div class="stats-badges">${badges}</div>
+                        </div>
+                    </div>
+                    <div class="right-side-container">
+                        <span class="runner-time">${run.timeString}</span>
+                        <button class="action-btn edit-btn" onclick="openEditModal(${run.id})">📝</button>
+                        <button class="action-btn delete-btn" onclick="deleteRun(${run.id})">&times;</button>
+                    </div>
+                `;
+                ol.appendChild(li);
+            });
+            if (popupWindow && !popupWindow.closed) syncPopupLeaderboard();
+        }
+
+        function deleteRun(id) {
+            runs = runs.filter(r => r.id !== id);
+            saveRunsForCurrentEvent();
+            sortAndDisplayRuns();
+        }
+
+        function openEditModal(id) {
+            const run = runs.find(r => r.id === id);
+            if (!run) return;
+            document.getElementById('editRunId').value = run.id;
+            document.getElementById('editRunnerName').value = run.name;
+            document.getElementById('editStatus').value = run.status;
+            
+            let totalMs = run.timeMs || 0;
+            let hours = Math.floor(totalMs / 3600000);
+            let minutes = Math.floor((totalMs % 3600000) / 60000);
+            let seconds = Math.floor((totalMs % 60000) / 1000);
+            let hundredths = Math.floor((totalMs % 1000) / 10);
+
+            document.getElementById('editHours').value = hours;
+            document.getElementById('editMinutes').value = minutes;
+            document.getElementById('editSeconds').value = seconds;
+            document.getElementById('editHundredths').value = hundredths;
+
+            document.getElementById('editPenaltyCount').value = run.penalties ? run.penalties.count : 0;
+            document.getElementById('editPenaltyTime').value = run.penalties ? run.penalties.time : 0;
+            document.getElementById('editBonusCount').value = run.bonuses ? run.bonuses.count : 0;
+            document.getElementById('editBonusTime').value = run.bonuses ? run.bonuses.time : 0;
+
+            toggleEditTimeField();
+            document.getElementById('editModal').style.display = 'flex';
+        }
+        
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+        
+        function toggleEditTimeField() {
+            const stat = document.getElementById('editStatus').value;
+            document.getElementById('editTimeGroup').style.display = (stat === "DNF" || stat === "DNS") ? 'none' : 'flex';
+        }
+        
+        function submitEditRun() {
+            const id = parseInt(document.getElementById('editRunId').value, 10);
+            const runIndex = runs.findIndex(r => r.id === id);
+            if (runIndex === -1) return;
+
+            const stat = document.getElementById('editStatus').value;
+            let pCount = parseInt(document.getElementById('editPenaltyCount').value, 10) || 0;
+            let pTime = parseInt(document.getElementById('editPenaltyTime').value, 10) || 0;
+            let bCount = parseInt(document.getElementById('editBonusCount').value, 10) || 0;
+            let bTime = parseInt(document.getElementById('editBonusTime').value, 10) || 0;
+
+            let timeMs = 0;
+            if (stat !== "DNF" && stat !== "DNS") {
+                let hrs = parseInt(document.getElementById('editHours').value, 10) || 0;
+                let mins = parseInt(document.getElementById('editMinutes').value, 10) || 0;
+                let secs = parseInt(document.getElementById('editSeconds').value, 10) || 0;
+                let hund = parseInt(document.getElementById('editHundredths').value, 10) || 0;
+                timeMs = (hrs * 3600000) + (mins * 60000) + (secs * 1000) + (hund * 10);
+            } else {
+                pCount = 0; pTime = 0; bCount = 0; bTime = 0;
+            }
+
+            runs[runIndex] = {
+                id: id, name: document.getElementById('editRunnerName').value.trim() || "Unbekannt",
+                status: stat, timeMs: timeMs, timeString: (stat === "DNF" || stat === "DNS") ? stat : formatTime(timeMs),
+                penalties: { count: pCount, time: pTime }, bonuses: { count: bCount, time: bTime }
+            };
+
+            saveRunsForCurrentEvent();
+            sortAndDisplayRuns(); closeEditModal();
+        }
+
+        // --- Popup Leinwand-Logik ---
+        function openScreenPopup() {
+            if (popupWindow && !popupWindow.closed) { popupWindow.focus(); return; }
+            popupWindow = window.open("", "LeinwandAnsicht", "width=1000,height=600,scrollbars=yes,resizable=yes");
+            popupWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Live-Anzeige Zeitmessung</title>
+                    <style>
+                        :root { --bg-color: #f4f7f6; --card-bg: #ffffff; --primary: #2c3e50; --accent: #3498db; --danger: #e74c3c; --success: #2ecc71; --text: #333333; --border-color: #dddddd; --penalty: #f39c12; --bonus: #9b59b6; --status: #7f8c8d; }
+                        [data-theme="dark"] { --bg-color: #1a1a1a; --card-bg: #2d2d2d; --primary: #ecf0f1; --accent: #5dade2; --text: #e0e0e0; --border-color: #444444; }
+                        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; height: 100vh; box-sizing: border-box; display: flex; gap: 20px; }
+                        .left-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
+                        .right-pane { width: 350px; background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
+                        #pRunnerName { font-size: 2.5rem; font-weight: bold; color: var(--accent); margin: 0 0 20px 0; min-height: 3.5rem; word-break: break-word; }
+                        #pDisplay { font-family: 'Courier New', monospace; font-size: 5.5rem; font-weight: bold; color: var(--primary); letter-spacing: 2px; margin: 20px 0; }
+                        #pNotice { font-size: 1.8rem; font-weight: 600; min-height: 2.5rem; }
+                        .notice-penalty { color: var(--danger); } .notice-bonus { color: var(--success); } .notice-status { color: var(--status); }
+                        h2 { margin-top: 0; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; font-size: 1.4rem; color: var(--primary); }
+                        .pop-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+                        .pop-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid var(--border-color); font-size: 1.05rem; }
+                        .pop-item:last-child { border-bottom: none; }
+                        .pop-rank { font-weight: bold; color: var(--accent); margin-right: 10px; }
+                        .pop-time { font-family: 'Courier New', monospace; font-weight: bold; }
+                        .p-badge { font-size: 0.7rem; padding: 1px 4px; border-radius: 3px; color: white; font-weight: bold; margin-left: 4px; display: inline-block; }
+                        .pb-p { background-color: var(--penalty); } .pb-b { background-color: var(--bonus); } .pb-s { background-color: var(--status); }
+                    </style>
+                </head>
+                <body>
+                    <div class="left-pane">
+                        <div id="pRunnerName">Bereit...</div>
+                        <div id="pDisplay">00:00:00.00</div>
+                        <div id="pNotice"></div>
+                    </div>
+                    <div class="right-pane">
+                        <h2>🏆 Bestenliste</h2>
+                        <ol id="pLeaderboard" class="pop-list"></ol>
+                    </div>
+                </body>
+                </html>
+            `);
+            popupWindow.document.close();
+            syncPopupTheme(); syncPopupRunnerName(); syncPopupNotice(); syncPopupLeaderboard();
+        }
+
+        function syncPopupTheme() { if (popupWindow && !popupWindow.closed) popupWindow.document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'light'); }
+        function syncPopupRunnerName() { if (popupWindow && !popupWindow.closed) popupWindow.document.getElementById('pRunnerName').innerText = document.getElementById('runnerName').value.trim() || "Bereit..."; }
+        function syncPopupTime(timeString) { if (popupWindow && !popupWindow.closed) popupWindow.document.getElementById('pDisplay').innerText = timeString; }
+        function syncPopupNotice() {
+            if (!popupWindow || popupWindow.closed) return;
+            const el = popupWindow.document.getElementById('pNotice');
+            if (currentStatus !== "REGULÄR") { el.innerText = `Status: ${currentStatus}`; el.className = "notice-status"; } 
+            else {
+                let text = "";
+                if (penaltyTime > 0) text += `+${penaltyTime}s Strafe `;
+                if (bonusTime > 0) text += `-${bonusTime}s Bonus`;
+                el.innerText = text.trim();
+                el.className = penaltyTime >= bonusTime ? "notice-penalty" : "notice-bonus";
+            }
+        }
+        function syncPopupLeaderboard() {
+            if (!popupWindow || popupWindow.closed) return;
+            const pOl = popupWindow.document.getElementById('pLeaderboard'); pOl.innerHTML = "";
+            if (runs.length === 0) { pOl.innerHTML = '<li style="text-align:center; color:#7f8c8d; font-style:italic; padding-top:20px;">Keine Läufe</li>'; return; }
+            runs.forEach((run, index) => {
+                const li = popupWindow.document.createElement('li'); li.className = "pop-item";
+                let tags = '';
+                if (run.status !== "REGULÄR") tags += `<span class="p-badge pb-s">${run.status}</span>`;
+                if (run.penalties?.count > 0) tags += `<span class="p-badge pb-p">+${run.penalties.time}s</span>`;
+                if (run.bonuses?.count > 0) tags += `<span class="p-badge pb-b">-${run.bonuses.time}s</span>`;
+                li.innerHTML = `<div><span class="pop-rank">#${index+1}</span><span>${escapeHTML(run.name)}${tags}</span></div><div class="pop-time">${run.timeString}</div>`;
+                pOl.appendChild(li);
+            });
+        }
+
+        // --- Export & Teilen ---
+        function prepareExportStyles() {
+            const element = document.getElementById('leaderboardCard'), cardHeader = document.getElementById('cardHeader');
+            const pdfEventTitle = document.getElementById('pdfEventTitle'), actionButtons = element.querySelectorAll('.action-btn');
+            
+            pdfEventTitle.innerText = currentEvent === 'Standardlauf' ? "🏆 Bestenliste" : currentEvent;
+            cardHeader.style.display = 'none'; pdfEventTitle.style.display = 'block';
+            actionButtons.forEach(btn => btn.style.display = 'none');
+            element.classList.add('pdf-export-mode');
+
+            return () => {
+                cardHeader.style.display = 'flex'; pdfEventTitle.style.display = 'none';
+                actionButtons.forEach(btn => btn.style.display = 'inline-block');
+                element.classList.remove('pdf-export-mode');
+            };
+        }
+
+        function exportToPDF() {
+            if (runs.length === 0) { alert("Keine Einträge vorhanden."); return; }
+            const resetStyles = prepareExportStyles();
+            const safeFileName = currentEvent !== 'Standardlauf' ? `Bestenliste_${currentEvent.replace(/[^a-z0-9]/gi, '_')}.pdf` : 'Bestenliste.pdf';
+            const opt = { margin: 15, filename: safeFileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            html2pdf().set(opt).from(document.getElementById('leaderboardCard')).save().then(resetStyles);
+        }
+
+        async function shareAsImage() {
+            if (runs.length === 0) { alert("Keine Einträge vorhanden."); return; }
+            const resetStyles = prepareExportStyles();
+            try {
+                const canvas = await html2canvas(document.getElementById('leaderboardCard'), { scale: 2, backgroundColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#2d2d2d' : '#ffffff' });
+                resetStyles();
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], 'bestenliste.png', { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: 'Bestenliste Ergebnisse' });
+                    } else {
+                        const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'Bestenliste.png'; a.click();
+                    }
+                }, 'image/png');
+            } catch (err) { console.error(err); resetStyles(); }
+        }
+
+        function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeitmessung & Bestenliste</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #333333;
+            --text-light: #7f8c8d;
+            --border-color: #dddddd;
+            --item-hover: #fafafa;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --primary: #ecf0f1;
+            --accent: #5dade2;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #e0e0e0;
+            --text-light: #95a5a6;
+            --border-color: #444444;
+            --item-hover: #3a3a3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .top-bar {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .theme-toggle-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            color: var(--text);
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .theme-toggle-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .card-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        <!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeitmessung & Bestenliste</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #333333;
+            --text-light: #7f8c8d;
+            --border-color: #dddddd;
+            --item-hover: #fafafa;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --primary: #ecf0f1;
+            --accent: #5dade2;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #e0e0e0;
+            --text-light: #95a5a6;
+            --border-color: #444444;
+            --item-hover: #3a3a3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .top-bar {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .theme-toggle-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            color: var(--text);
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .theme-toggle-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* Event Name Bereich */
+        .event-setting {
+            margin-bottom: 5px;
+        }
+        
+        .event-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            border: 2px dashed var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--primary);
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .event-input:focus {
+            border-color: var(--accent);
+            border-style: solid;
+        }
+
+        /* PDF Überschrift (wird nur im PDF angezeigt) */
+        #pdfEventTitle {
+            display: none;
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .card-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .btn-pdf {
+            background-color: #8e44ad;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-pdf:hover {
+            background-color: #9b59b6;
+        }
+
+        /* Bestenliste */
+        .leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+
+        .leaderboard-item:hover {
+            background-color: var(--item-hover);
+        }
+
+        .runner-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .rank {
+            font-weight: bold;
+            color: var(--accent);
+            width: 25px;
+        }
+
+        .runner-name {
+            font-weight: 500;
+        }
+
+        .runner-time {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: var(--primary);
+            margin-right: 15px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0 5px;
+        }
+
+        .delete-btn:hover {
+            color: var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-light);
+            font-style: italic;
+            padding: 10px 0;
+        }
+
+        /* Formular & Displays */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        .stopwatch-display {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 3rem;
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+            letter-spacing: 2px;
+        }
+
+        .penalty-display {
+            text-align: center;
+            color: var(--danger);
+            font-weight: 600;
+            height: 20px;
+            margin-bottom: 15px;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-start { background-color: var(--success); }
+        .btn-stop { background-color: var(--danger); }
+        .btn-penalty { background-color: #f39c12; }
+        .btn-save { background-color: var(--accent); grid-column: span 2; }
+
+        /* Spezifisches PDF-Styling beim Export */
+        .pdf-export-mode {
+            padding: 30px !important;
+            color: #2c3e50 !important;
+            background: white !important;
+        }
+        .pdf-export-mode h2 {
+            color: #2c3e50 !important;
+            border-bottom: 2px solid #3498db !important;
+        }
+        .pdf-export-mode .runner-time {
+            color: #2c3e50 !important;
+        }
+        .pdf-export-mode .rank {
+            color: #3498db !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+            <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
+        </button>
+    </div>
+
+    <div class="container">
+        
+        <div class="card event-setting">
+            <input type="text" id="eventName" class="event-input" placeholder="Name des Laufs eingeben (z.B. Sommerlauf 2026)" oninput="saveEventName()" autocomplete="off">
+        </div>
+        
+        <div class="card" id="leaderboardCard">
+            <h1 id="pdfEventTitle">Bestenliste</h1>
+            
+            <div class="card-header-container" id="cardHeader">
+                <h2>🏆 Bestenliste</h2>
+                <button class="btn-pdf" id="pdfBtn" onclick="exportToPDF()" title="Als PDF herunterladen">
+                    📄 PDF Exportieren
+                </button>
+            </div>
+            <ol id="leaderboard" class="leaderboard-list">
+                </ol>
+        </div>
+
+        <div class="card">
+            <div class="card-header-container">
+                <h2>⏱️ Neuer Lauf</h2>
+            </div>
+            
+            <div class="form-group">
+                <label for="runnerName">Name des Läufers:</label>
+                <input type="text" id="runnerName" placeholder="z.B. Max Mustermann" autocomplete="off">
+            </div>
+
+            <div class="stopwatch-display" id="display">00:00:00.00</div>
+            <div class="penalty-display" id="penaltyNotice"></div>
+
+            <div class="btn-group">
+                <button class="btn btn-start" id="startBtn" onclick="startTimer()">Start</button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopTimer()" disabled>Stop</button>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-penalty" id="penalty5Btn" onclick="addPenalty(5)" disabled>+5s Strafe</button>
+                <button class="btn btn-penalty" id="penalty15Btn" onclick="addPenalty(15)" disabled>+15s Strafe</button>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-save" id="saveBtn" onclick="saveRun()" disabled>Lauf Speichern</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let penaltySeconds = 0;
+        let currentTotalMs = 0;
+
+        let runs = JSON.parse(localStorage.getItem('runnerLeaderboard')) || [];
+
+        window.onload = function() {
+            updateLeaderboardDisplay();
+            initTheme();
+            // Lade den gespeicherten Eventnamen, falls vorhanden
+            const savedEventName = localStorage.getItem('runnerEventName') || '';
+            document.getElementById('eventName').value = savedEventName;
+        };
+
+        // Eventnamen im LocalStorage mitspeichern
+        function saveEventName() {
+            const name = document.getElementById('eventName').value;
+            localStorage.setItem('runnerEventName', name);
+        }
+
+        // --- Dark Mode ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleComponents(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleComponents(newTheme);
+        }
+
+        function updateThemeToggleComponents(theme) {
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+            if (theme === 'dark') {
+                icon.innerText = "☀️";
+                text.innerText = "Light Mode";
+            } else {
+                icon.innerText = "🌙";
+                text.innerText = "Dark Mode";
+            }
+        }
+
+        // --- PDF Export ---
+        function exportToPDF() {
+            if (runs.length === 0) {
+                alert("Es gibt noch keine Einträge, die exportiert werden können.");
+                return;
+            }
+
+            const element = document.getElementById('leaderboardCard');
+            const cardHeader = document.getElementById('cardHeader');
+            const pdfEventTitle = document.getElementById('pdfEventTitle');
+            const deleteButtons = element.querySelectorAll('.delete-btn');
+            
+            // Eventnamen für das PDF setzen (Fallbacks nutzen, wenn das Feld leer ist)
+            const inputEventName = document.getElementById('eventName').value.trim();
+            pdfEventTitle.innerText = inputEventName ? inputEventName : "🏆 Bestenliste";
+
+            // UI-Elemente für den Druck-Snapshot anpassen
+            cardHeader.style.display = 'none'; // Normaler Header ausblenden
+            pdfEventTitle.style.display = 'block'; // PDF-Überschrift einblenden
+            deleteButtons.forEach(btn => btn.style.display = 'none'); // X-Buttons ausblenden
+            element.classList.add('pdf-export-mode');
+
+            // Dateiname basierend auf dem Eventtitel generieren
+            const safeFileName = inputEventName ? `Bestenliste_${inputEventName.replace(/[^a-z0-9]/gi, '_')}.pdf` : 'Bestenliste.pdf';
+
+            const opt = {
+                margin:       15,
+                filename:     safeFileName,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // PDF erstellen und danach UI wieder zurücksetzen
+            html2pdf().set(opt).from(element).save().then(() => {
+                cardHeader.style.display = 'flex';
+                pdfEventTitle.style.display = 'none';
+                deleteButtons.forEach(btn => btn.style.display = 'inline-block');
+                element.classList.remove('pdf-export-mode');
+            });
+        }
+
+        // --- Zeitmessung ---
+        function formatTime(totalMilliseconds) {
+            let hours = Math.floor(totalMilliseconds / 3600000);
+            let minutes = Math.floor((totalMilliseconds % 3600000) / 60000);
+            let seconds = Math.floor((totalMilliseconds % 60000) / 1000);
+            let hundredths = Math.floor((totalMilliseconds % 1000) / 10);
+
+            return (
+                (hours < 10 ? "0" : "") + hours + ":" +
+                (minutes < 10 ? "0" : "") + minutes + ":" +
+                (seconds < 10 ? "0" : "") + seconds + "." +
+                (hundredths < 10 ? "0" : "") + hundredths
+            );
+        }
+
+        function startTimer() {
+            const nameInput = document.getElementById('runnerName').value.trim();
+            if (!nameInput) {
+                alert("Bitte gib zuerst einen Namen für den Läufer ein.");
+                return;
+            }
+
+            elapsedTime = 0;
+            penaltySeconds = 0;
+            currentTotalMs = 0;
+            document.getElementById('penaltyNotice').innerText = "";
+            
+            startTime = Date.now();
+            
+            timerInterval = setInterval(function() {
+                elapsedTime = Date.now() - startTime;
+                currentTotalMs = elapsedTime;
+                document.getElementById('display').innerText = formatTime(currentTotalMs);
+            }, 10);
+
+            document.getElementById('runnerName').disabled = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            document.getElementById('penalty5Btn').disabled = true;
+            document.getElementById('penalty15Btn').disabled = true;
+            document.getElementById('saveBtn').disabled = true;
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('penalty5Btn').disabled = false;
+            document.getElementById('penalty15Btn').disabled = false;
+            document.getElementById('saveBtn').disabled = false;
+        }
+
+        function addPenalty(seconds) {
+            penaltySeconds += seconds;
+            currentTotalMs += (seconds * 1000);
+            
+            document.getElementById('display').innerText = formatTime(currentTotalMs);
+            document.getElementById('penaltyNotice').innerText = `+${penaltySeconds}s Strafe aktiv`;
+        }
+
+        function saveRun() {
+            const name = document.getElementById('runnerName').value.trim();
+            
+            const newRun = {
+                id: Date.now(),
+                name: name,
+                timeMs: currentTotalMs,
+                timeString: formatTime(currentTotalMs)
+            };
+
+            runs.push(newRun);
+            runs.sort((a, b) => a.timeMs - b.timeMs); // Schnellste Zeit oben
+
+            localStorage.setItem('runnerLeaderboard', JSON.stringify(runs));
+            updateLeaderboardDisplay();
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('runnerName').value = "";
+            document.getElementById('runnerName').disabled = false;
+            document.getElementById('display').innerText = "00:00:00.00";
+            document.getElementById('penaltyNotice').innerText = "";
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('penalty5Btn').disabled = true;
+            document.getElementById('penalty15Btn').disabled = true;
+            document.getElementById('saveBtn').disabled = true;
+            
+            elapsedTime = 0;
+            penaltySeconds = 0;
+            currentTotalMs = 0;
+        }
+
+        function updateLeaderboardDisplay() {
+            const leaderboardOl = document.getElementById('leaderboard');
+            leaderboardOl.innerHTML = "";
+
+            if (runs.length === 0) {
+                leaderboardOl.innerHTML = '<li class="empty-state">Noch keine Läufe registriert.</li>';
+                return;
+            }
+
+            runs.forEach((run, index) => {
+                const li = document.createElement('li');
+                li.className = "leaderboard-item";
+                
+                li.innerHTML = `
+                    <div class="runner-info">
+                        <span class="rank">#${index + 1}</span>
+                        <span class="runner-name">${escapeHTML(run.name)}</span>
+                    </div>
+                    <div>
+                        <span class="runner-time">${run.timeString}</span>
+                        <button class="delete-btn" onclick="deleteRun(${run.id})" title="Lauf löschen">&times;</button>
+                    </div>
+                `;
+                leaderboardOl.appendChild(li);
+            });
+        }
+
+        function deleteRun(id) {
+            runs = runs.filter(run => run.id !== id);
+            localStorage.setItem('runnerLeaderboard', JSON.stringify(runs));
+            updateLeaderboardDisplay();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>

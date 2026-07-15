@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeitmessung & Bestenliste</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --penalty: #f39c12;
+            --bonus: #9b59b6;
+            --status-color: #7f8c8d;
+            --text: #333333;
+            --text-light: #7f8c8d;
+            --border-color: #dddddd;
+            --item-hover: #fafafa;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --primary: #ecf0f1;
+            --accent: #5dade2;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --penalty: #e67e22;
+            --bonus: #8e44ad;
+            --status-color: #95a5a6;
+            --text: #e0e0e0;
+            --text-light: #95a5a6;
+            --border-color: #444444;
+            --item-hover: #3a3a3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        .top-bar { 
+            width: 100%; 
+            max-width: 600px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            gap: 15px;
+        }
+        
+        .whitelabel-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .whitelabel-title[href]:hover {
+            color: var(--accent);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lang-switch-container {
+            display: flex;
+            gap: 5px;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            padding: 4px 8px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 50%;
+            transition: transform 0.1s, filter 0.2s;
+            filter: grayscale(40%);
+        }
+        .lang-btn:hover { transform: scale(1.1); filter: grayscale(0%); }
+        .lang-btn.active { filter: grayscale(0%); transform: scale(1.15); font-weight: bold; }
+
+        .theme-toggle-btn {
+            background: var(--card-bg); border: 2px solid var(--border-color); color: var(--text);
+            padding: 8px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s;
+        }
+        .theme-toggle-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 25px; }
+        .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; transition: background-color 0.3s, box-shadow 0.3s; }
+        
+        .event-management-block { width: 100%; }
+        .event-select { width: 100%; padding: 12px; font-size: 1.1rem; font-weight: bold; color: var(--primary); border: 2px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); outline: none; cursor: pointer; display: block; margin-bottom: 12px; }
+        
+        .event-buttons-row { display: table; width: 100%; table-layout: fixed; }
+        .event-btn-cell { display: table-cell; padding: 0 5px; }
+        .event-btn-cell:first-child { padding-left: 0; }
+        .event-btn-cell:last-child { padding-right: 0; }
+        
+        .btn-event-action { color: white; border: none; width: 100%; height: 48px; border-radius: 8px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: block; transition: opacity 0.2s; text-align: center; }
+        .btn-event-action:hover { opacity: 0.9; }
+        .btn-create-event { background-color: var(--accent); font-size: 1.5rem; }
+        .btn-lock-event { background-color: #2c3e50; }
+        .btn-lock-event.is-locked { background-color: var(--danger); }
+        .btn-delete-event { background-color: var(--danger); }
+
+        .tabs-container { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; gap: 5px; }
+        .tab-btn { flex: 1; padding: 12px; background: none; border: none; color: var(--text-light); font-weight: bold; font-size: 1rem; cursor: pointer; border-radius: 8px 8px 0 0; transition: all 0.2s; }
+        .tab-btn:hover { background-color: var(--item-hover); }
+        .tab-btn.active { color: var(--accent); border-bottom: 3px solid var(--accent); background-color: var(--item-hover); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        #pdfEventTitle { display: none; margin: 0 0 15px 0; color: #2c3e50; font-size: 1.8rem; text-align: center; }
+        .card-header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; margin-bottom: 15px; gap: 10px; }
+        h2 { margin: 0; color: var(--primary); font-size: 1.5rem; flex-grow: 1; }
+        .header-actions { display: flex; gap: 8px; }
+
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { 
+            display: none; position: absolute; right: 0; top: 100%; background-color: var(--card-bg); 
+            min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.15); border: 1px solid var(--border-color);
+            border-radius: 6px; z-index: 10; overflow: hidden; margin-top: 5px;
+        }
+        .dropdown-content button { 
+            color: var(--text); padding: 12px 16px; text-decoration: none; display: block; 
+            width: 100%; border: none; background: none; text-align: left; font-size: 0.9rem; 
+            font-weight: 500; cursor: pointer; transition: background-color 0.2s;
+        }
+        .dropdown-content button:hover { background-color: var(--item-hover); }
+        .dropdown:hover .dropdown-content { display: block; }
+
+        .btn-action-header { color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.2s; }
+        .btn-action-header:hover { opacity: 0.9; }
+        .btn-export-dropdown { background-color: #8e44ad; }
+        .btn-data-dropdown { background-color: #27ae60; }
+
+        .leaderboard-header { display: flex; padding: 10px; font-weight: bold; border-bottom: 2px solid var(--border-color); color: var(--primary); margin-bottom: 5px; font-size: 0.9rem; }
+        .header-pos { width: 35px; }
+        .header-name { flex-grow: 1; padding-left: 10px; }
+        .header-time { width: 120px; text-align: right; padding-right: 15px; }
+
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid var(--border-color); transition: background 0.2s; gap: 10px; }
+        .leaderboard-item:last-child { border-bottom: none; }
+        .leaderboard-item:hover { background-color: var(--item-hover); }
+
+        .runner-info { display: flex; align-items: center; gap: 12px; flex-grow: 1; }
+        .rank { font-weight: bold; color: var(--accent); width: 25px; }
+        
+        .runner-name-container { display: flex; align-items: center; gap: 8px; }
+        .runner-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 16px; font-size: 1.1rem; }
+        .runner-icon img { width: 16px; height: 16px; object-fit: contain; }
+        
+        .runner-name { font-weight: 500; }
+        
+        .stats-badges { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.75rem; margin-top: 4px; font-weight: 600; }
+        .badge { padding: 2px 6px; border-radius: 4px; color: white; }
+        .badge-penalty { background-color: var(--penalty); }
+        .badge-bonus { background-color: var(--bonus); }
+        .badge-status { background-color: var(--status-color); }
+
+        .right-side-container { display: flex; align-items: center; gap: 10px; width: 120px; justify-content: flex-end; }
+        .runner-time { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: var(--primary); }
+
+        .action-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; transition: color 0.2s; padding: 0 4px; color: var(--text-light); }
+        .edit-btn:hover { color: var(--accent); }
+        .delete-btn:hover { color: var(--danger); }
+        .empty-state { text-align: center; color: var(--text-light); font-style: italic; padding: 10px 0; }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .input-inline-group { display: flex; gap: 8px; }
+        .input-inline-group input { flex: 1; }
+        label { font-weight: 600; color: var(--primary); }
+
+        input[type="text"], input[type="number"], select { padding: 12px; border: 2px solid var(--border-color); background-color: var(--card-bg); color: var(--text); border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s, background-color 0.3s, color 0.3s; }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--accent); }
+
+        .time-inputs-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .time-input-container { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-light); font-weight: 600; }
+        .time-inputs-row input { width: 100%; box-sizing: border-box; text-align: center; padding: 10px 5px; }
+
+        .stopwatch-display { font-family: 'Courier New', Courier, monospace; font-size: 3rem; text-align: center; font-weight: bold; color: var(--primary); margin: 20px 0; letter-spacing: 2px; }
+        .adjustment-display { text-align: center; font-weight: 600; height: 20px; margin-bottom: 15px; font-size: 1.1rem; }
+        .adjustment-display.penalty { color: var(--danger); }
+        .adjustment-display.bonus { color: var(--success); }
+        .adjustment-display.status-info { color: var(--status-color); }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: opacity 0.2s, transform 0.1s; color: white; display: flex; justify-content: center; align-items: center; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-start { background-color: var(--success); }
+        .btn-pause { background-color: var(--warning); color: #333; }
+        .btn-stop { background-color: var(--danger); }
+        .btn-popup-view { background-color: #34495e; grid-column: span 2; }
+        .btn-save { background-color: var(--accent); grid-column: span 2; }
+
+        .management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; margin-top: 10px; }
+        .btn-add-type { color: white; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: opacity 0.2s; }
+        .btn-add-type.penalty-add { background-color: var(--penalty); }
+        .btn-add-type.bonus-add { background-color: var(--bonus); }
+
+        .dynamic-button-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .custom-btn-container { border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: white; display: inline-flex; align-items: center; }
+        .custom-btn-container.type-penalty { background-color: var(--penalty); }
+        .custom-btn-container.type-bonus { background-color: var(--bonus); }
+        .custom-btn-container.type-status { background-color: var(--status-color); }
+
+        .btn-custom-action { background: none; border: none; color: white; padding: 12px 15px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .btn-custom-action:hover:not(:disabled) { background-color: rgba(0, 0, 0, 0.1); }
+        .btn-custom-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .delete-custom-type-btn { background: rgba(0, 0, 0, 0.15); border: none; color: white; padding: 0 10px; align-self: stretch; cursor: pointer; font-size: 1rem; transition: background-color 0.2s; }
+        .delete-custom-type-btn:hover { background-color: var(--danger); }
+
+        .group-runners-list { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .group-runner-row { background: var(--bg-color); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); }
+        .group-runner-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .group-runner-name-label { font-weight: bold; font-size: 1.1rem; }
+        .group-time-display { font-family: 'Courier New', monospace; font-size: 1.6rem; font-weight: bold; }
+        .group-mini-btn-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .group-mini-btn { flex: 1; min-width: 70px; padding: 8px; font-size: 0.85rem; }
+
+        .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+        .pdf-export-mode { padding: 30px !important; color: #000000 !important; background: #ffffff !important; box-shadow: none !important; }
+        .pdf-export-mode * { color: #000000 !important; background-color: transparent !important; border-color: #cccccc !important; }
+        .pdf-export-mode .runner-time { color: #000000 !important; font-weight: bold !important; }
+        .pdf-export-mode .runner-name { color: #000000 !important; font-weight: 600 !important; }
+        .pdf-export-mode .rank { color: #3498db !important; font-weight: bold !important; }
+        .pdf-export-mode .badge { color: #ffffff !important; font-weight: bold !important; }
+        .pdf-export-mode .badge-penalty { background-color: #f39c12 !important; }
+        .pdf-export-mode .badge-bonus { background-color: #9b59b6 !important; }
+        .pdf-export-mode .badge-status { background-color: #7f8c8d !important; }
+        .pdf-export-mode .leaderboard-header { border-color: #cccccc !important; }
+
+        .pdf-export-mode .action-btn { display: none !important; }
+
+        .app-footer { margin-top: 40px; margin-bottom: 20px; font-size: 0.85rem; color: var(--text-light); text-align: center; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        
+        .changelog-link { color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        .changelog-link:hover { opacity: 0.8; text-decoration: underline; }
+        
+        .changelog-pre { font-family: 'Consolas', 'Courier New', Courier, monospace; background: var(--bg-color); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); white-space: pre-wrap; word-break: break-all; text-align: left; max-height: 250px; overflow-y: auto; color: var(--text); }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a id="whitelabelTitle" class="whitelabel-title">⏱️ Zeitmessung</a>
+        <div class="top-bar-actions">
+            <div class="lang-switch-container">
+                <button id="langBtnDe" class="lang-btn active" onclick="setLanguage('de')" title="Deutsch">🇩🇪</button>
+                <button id="langBtnEn" class="lang-btn" onclick="setLanguage('en')" title="English">🇬🇧</button>
+            </div>
+            <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+                <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
+            </button>
+        </div>
+    </div>
+
+    <input type="file" id="jsonImportInput" accept=".json" style="display: none;" onchange="importJSONData(event)">
+
+    <div class="container">
+        <!-- Event-Bereich -->
+        <div class="card event-setting">
+            <div class="event-management-block">
+                <select id="eventSelect" class="event-select" onchange="handleEventSelectChange()"></select>
+                <div class="event-buttons-row">
+                    <div class="event-btn-cell"><button class="btn-event-action btn-create-event" onclick="openEventCreationModal()" title="Neuen Lauf anlegen">+</button></div>
+                    <div class="event-btn-cell"><button id="lockEventBtn" class="btn-event-action btn-lock-event" onclick="toggleLockCurrentEvent()" title="Lauf abschließen/öffnen">🔒</button></div>
+                    <div class="event-btn-cell"><button class="btn-event-action btn-delete-event" onclick="deleteCurrentEvent()" title="Diesen Lauf löschen">🗑️</button></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bereich 1: Bestenliste -->
+        <div class="card" id="leaderboardCard">
+            <h1 id="pdfEventTitle">Bestenliste</h1>
+            <div class="card-header-container" id="cardHeader">
+                <h2 id="lblLeaderboardTitle">🏆 Bestenliste</h2>
+                <div class="header-actions">
+                    <div class="dropdown">
+                        <button id="lblExportDropdown" class="btn-action-header btn-export-dropdown">📤 Export</button>
+                        <div class="dropdown-content">
+                            <button id="lblPdfSave" onclick="exportToPDF()">PDF speichern</button>
+                            <button id="lblImageShare" onclick="shareAsImage()">Bild teilen/speichern</button>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button id="lblDataDropdown" class="btn-action-header btn-data-dropdown">💾 Daten</button>
+                        <div class="dropdown-content">
+                            <button id="lblJsonExport" onclick="exportJSONData()">Export (JSON)</button>
+                            <button id="lblJsonImport" onclick="triggerJSONImport()">Import (JSON)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kopfzeile für die Tabelle -->
+            <div class="leaderboard-header" id="leaderboardHeader" style="display:none;">
+                <div class="header-pos" id="lblHeaderPos">Pos.</div>
+                <div class="header-name" id="lblHeaderName">Name</div>
+                <div class="header-time" id="lblHeaderTime">Zeit</div>
+            </div>
+
+            <ol id="leaderboard" class="leaderboard-list"></ol>
+        </div>
+
+        <!-- Bereich 2: Zeitmessung -->
+        <div class="card" id="timingCard">
+            <div class="tabs-container">
+                <button id="tabSingleBtn" class="tab-btn active" onclick="switchTab('single')">👤 Einzelläufer</button>
+                <button id="tabGroupBtn" class="tab-btn" onclick="switchTab('group')">👥 Gruppenlauf</button>
+            </div>
+            
+            <!-- TAB: Einzelläufer -->
+            <div id="tabSingleContent" class="tab-content active">
+                <div class="form-group">
+                    <label id="lblRunnerName" for="runnerName">Name des Läufers:</label>
+                    <input type="text" id="runnerName" placeholder="z.B. Max Mustermann" autocomplete="off" oninput="syncPopupRunnerName()">
+                </div>
+
+                <div class="stopwatch-display" id="display">00:00:00.00</div>
+                <div id="adjustmentNotice" class="adjustment-display"></div>
+
+                <div class="btn-group">
+                    <button class="btn btn-start" id="startBtn" onclick="toggleTimer()">Start</button>
+                    <button class="btn btn-stop" id="stopBtn" onclick="stopTimer()" disabled>Stop</button>
+                </div>
+
+                <div class="management-header">
+                    <label id="lblPenaltySection">Strafsekunden hinzufügen (+):</label>
+                    <button id="addPenaltyTypeBtn" class="btn-add-type penalty-add" onclick="openModal('add_btn_penalty')">+</button>
+                </div>
+                <div id="dynamicPenaltyGroup" class="dynamic-button-group"></div>
+
+                <div class="management-header">
+                    <label id="lblBonusSection">Bonuszeit abziehen (-):</label>
+                    <button id="addBonusTypeBtn" class="btn-add-type bonus-add" onclick="openModal('add_btn_bonus')">+</button>
+                </div>
+                <div id="dynamicBonusGroup" class="dynamic-button-group"></div>
+
+                <div class="management-header"><label id="lblSpecialStatusSection">Spezial-Status setzen:</label></div>
+                <div class="dynamic-button-group">
+                    <div class="custom-btn-container type-status"><button id="statusBtnDNS" class="btn-custom-action" onclick="handleStatusSet('DNS')">DNS</button></div>
+                    <div class="custom-btn-container type-status"><button id="statusBtnDNF" class="btn-custom-action" onclick="handleStatusSet('DNF')">DNF</button></div>
+                    <div class="custom-btn-container type-status"><button id="statusBtnDNQ" class="btn-custom-action" disabled onclick="handleStatusSet('DNQ')">DNQ</button></div>
+                </div>
+
+                <div class="btn-group" style="margin-top:20px;">
+                    <button class="btn btn-save" id="saveBtn" onclick="saveRun()" disabled>Lauf Speichern</button>
+                </div>
+            </div>
+
+            <!-- TAB: Gruppenlauf -->
+            <div id="tabGroupContent" class="tab-content">
+                <div class="form-group" id="groupSetupForm">
+                    <label id="lblGroupRunnerAdd" for="groupRunnerInput">Läufer zur Gruppe hinzufügen:</label>
+                    <div class="input-inline-group">
+                        <input type="text" id="groupRunnerInput" placeholder="Name eingeben...">
+                        <button id="lblGroupAddBtn" class="btn btn-start" style="padding: 0 20px;" onclick="addRunnerToGroup()">Hinzufügen</button>
+                    </div>
+                </div>
+                <div id="groupMassActionRow" style="display: none; margin-bottom: 15px;">
+                    <button class="btn btn-start" id="groupMassStartBtn" style="width: 100%;" onclick="startAllGroupRunners()">🏁 Alle Starten</button>
+                </div>
+                <div id="groupRunnersContainer" class="group-runners-list"></div>
+            </div>
+            
+            <div class="btn-group" style="margin-top:20px;">
+                <button id="lblScreenPopupBtn" class="btn btn-popup-view" onclick="openScreenPopup()">📺 Leinwand-Ansicht öffnen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer mit Versionsnummer und Changelog-Link -->
+    <footer class="app-footer">
+        <span id="appFooter">Version: Lädt...</span>
+        <a id="lblChangelogLink" class="changelog-link" onclick="openChangelogModal()">Changelog</a>
+    </footer>
+
+    <!-- Modals -->
+    <div id="customModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="modalTitle" style="margin-top:0;">Neuen Button anlegen</h3>
+            <div class="form-group">
+                <label id="lblNewBtnName" for="newBtnName">Bezeichnung / Name:</label>
+                <input type="text" id="newBtnName" placeholder="z.B. Torfehler">
+            </div>
+            <div class="form-group">
+                <label id="lblNewBtnSeconds" for="newBtnSeconds">Zeit (in Sekunden):</label>
+                <input type="number" id="newBtnSeconds" placeholder="z.B. 5" min="1">
+            </div>
+            <div class="modal-actions">
+                <button id="lblModalCancel" class="btn" style="background-color: var(--text-light);" onclick="closeModal()">Abbrechen</button>
+                <button id="lblModalCreate" class="btn" style="background-color: var(--success);" onclick="createNewButton()">Erstellen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="eventModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="lblEventModalTitle" style="margin-top:0;">Neuen Lauf (Event) anlegen</h3>
+            <div class="form-group">
+                <label id="lblNewEventName" for="newEventName">Name des Events:</label>
+                <input type="text" id="newEventName" placeholder="z.B. Sommerlauf 2026">
+            </div>
+            <div class="modal-actions">
+                <button id="lblEventModalCancel" class="btn" style="background-color: var(--text-light);" onclick="closeEventModal()">Abbrechen</button>
+                <button id="lblEventModalCreate" class="btn" style="background-color: var(--success);" onclick="createNewEvent()">Anlegen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Changelog Fenster -->
+    <div id="changelogModal" class="custom-modal" onclick="closeChangelogModalOnOutsideClick(event)">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color: var(--primary);">📋 Changelog</h3>
+            <div class="form-group">
+                <pre id="changelogContent" class="changelog-pre">Lädt Changelog...</pre>
+            </div>
+            <div class="modal-actions">
+                <button id="lblChangelogClose" class="btn" style="background-color: var(--accent);" onclick="closeChangelogModal()">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="lblEditModalTitle" style="margin-top:0;">Eintrag bearbeiten</h3>
+            <input type="hidden" id="editRunId">
+            <div class="form-group">
+                <label id="lblEditRunnerName" for="editRunnerName">Name des Läufers:</label>
+                <input type="text" id="editRunnerName">
+            </div>
+            <div class="form-group">
+                <label id="lblEditStatus" for="editStatus">Status:</label>
+                <select id="editStatus" onchange="toggleEditTimeField()">
+                    <option value="REGULÄR">Regulär</option>
+                    <option value="DNQ">DNQ</option>
+                    <option value="DNF">DNF</option>
+                    <option value="DNS">DNS</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="editTimeGroup">
+                <label id="lblEditPureTime">Reine Laufzeit:</label>
+                <div class="time-inputs-row">
+                    <div class="time-input-container"><input type="number" id="editHours" min="0"><span id="lblUnitHours" style="font-size:0.7rem">Std</span></div>
+                    <div class="time-input-container"><input type="number" id="editMinutes" min="0"><span id="lblUnitMinutes" style="font-size:0.7rem">Min</span></div>
+                    <div class="time-input-container"><input type="number" id="editSeconds" min="0"><span id="lblUnitSeconds" style="font-size:0.7rem">Sek</span></div>
+                    <div class="time-input-container"><input type="number" id="editHundredths" min="0"><span style="font-size:0.7rem">1/100</span></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label id="lblEditPenaltyCount" for="editPenaltyCount">Anzahl Strafen:</label>
+                <input type="number" id="editPenaltyCount" min="0">
+            </div>
+            <div class="form-group">
+                <label id="lblEditPenaltyTime" for="editPenaltyTime">Strafzeit Gesamt (Sekunden):</label>
+                <input type="number" id="editPenaltyTime" min="0">
+            </div>
+            <div class="form-group">
+                <label id="lblEditBonusCount" for="editBonusCount">Anzahl Boni:</label>
+                <input type="number" id="editBonusCount" min="0">
+            </div>
+            <div class="form-group">
+                <label id="lblEditBonusTime" for="editBonusTime">Bonuszeit Gesamt (Sekunden):</label>
+                <input type="number" id="editBonusTime" min="0">
+            </div>
+
+            <div class="modal-actions">
+                <button id="lblEditModalCancel" class="btn" style="background-color: var(--text-light);" onclick="closeEditModal()">Abbrechen</button>
+                <button id="lblEditModalSave" class="btn" style="background-color: var(--accent);" onclick="submitEditRun()">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false, isPaused = false;
+        let startTime = 0, elapsedBeforePause = 0, timerInterval = null, currentTotalMs = 0;
+        let penaltyCount = 0, penaltyTime = 0, bonusCount = 0, bonusTime = 0, currentStatus = "REGULÄR";
+        let currentModalMode = 'add_btn_penalty', popupWindow = null;
+        
+        let currentEvent = 'Standardlauf'; let eventList = ['Standardlauf']; let runs = []; let lockedEvents = []; let activeTab = 'single';
+        let groupRunners = []; let groupInterval = null;
+        let currentLang = 'de';
+
+        let penaltyTypes = JSON.parse(localStorage.getItem('runnerPenaltyTypes')) || [];
+        let bonusTypes = JSON.parse(localStorage.getItem('runnerBonusTypes')) || [];
+
+        // Wörterbuch für Übersetzungen
+        const i18n = {
+            de: {
+                title: "⏱️ Zeitmessung", defaultEvent: "🏁 Standardlauf", trophyEvent: "🏆 ",
+                themeDark: "Dark Mode", themeLight: "Light Mode",
+                leaderboardTitle: "🏆 Bestenliste", exportDropdown: "📤 Export", pdfSave: "PDF speichern", imageShare: "Bild teilen/speichern",
+                dataDropdown: "💾 Daten", jsonExport: "Export (JSON)", jsonImport: "Import (JSON)",
+                headerPos: "Pos.", headerName: "Name", headerTime: "Zeit", emptyState: "Noch keine Läufe registriert.",
+                tabSingle: "👤 Einzelläufer", tabGroup: "👥 Gruppenlauf", runnerNameLabel: "Name des Läufers:", placeholderRunner: "z.B. Max Mustermann",
+                btnStart: "Start", btnPause: "Pause", btnStop: "Stop", btnResume: "Weiter", btnSaveRun: "Lauf Speichern",
+                penaltySection: "Strafsekunden hinzufügen (+):", bonusSection: "Bonuszeit abziehen (-):", specialStatusSection: "Spezial-Status setzen:",
+                groupRunnerAddLabel: "Läufer zur Gruppe hinzufügen:", placeholderGroupInput: "Name eingeben...", groupAddBtn: "Hinzufügen",
+                groupMassStart: "🏁 Alle Starten", groupProvisioning: "Gruppenlauf: Bereitstellung...", noRunsLive: "Keine Läufe", ScreenPopupBtn: "📺 Leinwand-Ansicht öffnen",
+                newBtnTitlePenalty: "Neuen Straf-Button anlegen (+)", newBtnTitleBonus: "Neuen Bonus-Button anlegen (-)",
+                lblNewBtnName: "Bezeichnung / Name:", placeholderNewBtn: "z.B. Torfehler", lblNewBtnSeconds: "Zeit (in Sekunden):", placeholderSeconds: "z.B. 5",
+                lblModalCancel: "Abbrechen", lblModalCreate: "Erstellen", lblEventModalTitle: "Neuen Lauf (Event) anlegen", lblNewEventName: "Name des Events:", placeholderEvent: "z.B. Sommerlauf 2026",
+                changelogLoading: "Changelog wird geladen...", changelogError: "Fehler beim Laden des Changelogs (Changelog.info nicht gefunden).", lblChangelogClose: "Schließen",
+                lblEditModalTitle: "Eintrag bearbeiten", lblEditRunnerName: "Name des Läufers:", lblEditStatus: "Status:", statusRegular: "Regulär",
+                lblEditPureTime: "Reine Laufzeit:", unitHours: "Std", unitMinutes: "Min", unitSeconds: "Sek",
+                lblEditPenaltyCount: "Anzahl Strafen:", lblEditPenaltyTime: "Strafzeit Gesamt (Sekunden):", lblEditBonusCount: "Anzahl Boni:", lblEditBonusTime: "Bonuszeit Gesamt (Sekunden):",
+                alertNameRequired: "Bitte einen Namen für den Läufer eingeben.", alertEventRequired: "Bitte einen Eventnamen eingeben.", alertEventExists: "Dieses Event existiert bereits.",
+                alertDeleteEvent: "Event \"{e}\" unwiderruflich löschen?", alertDefaultEventDelete: "Der Standardlauf kann nicht gelöscht werden.", alertActiveMeasurementBlock: "Wechsel während aktiver Messung blockiert!",
+                alertGroupRunnerRequired: "Bitte einen Namen für den Gruppenläufer eingeben.", alertJsonImportConfirm: "Läufe in dieses Event importieren?", alertJsonError: "Fehlerhafte JSON-Datei.",
+                badgePenalty: "{c}x Strafe (+{t}s)", badgeBonus: "{c}x Bonus (-{t}s)", livePenaltyInfo: "+{t}s Strafe", liveBonusInfo: "-{t}s Bonus",
+                groupPenaltiesLabel: "Strafen:", groupBonusesLabel: "Boni:", statusLockedText: "GEBLOCKT", statusReadyText: "Bereit...", statusLockedEventText: "Gesperrt"
+            },
+            en: {
+                title: "⏱️ Timing System", defaultEvent: "🏁 Standard Run", trophyEvent: "🏆 ",
+                themeDark: "Dark Mode", themeLight: "Light Mode",
+                leaderboardTitle: "🏆 Leaderboard", exportDropdown: "📤 Export", pdfSave: "Save PDF", imageShare: "Share/Save Image",
+                dataDropdown: "💾 Data", jsonExport: "Export (JSON)", jsonImport: "Import (JSON)",
+                headerPos: "Pos.", headerName: "Name", headerTime: "Time", emptyState: "No fewer runs registered yet.",
+                tabSingle: "👤 Single Runner", tabGroup: "👥 Group Run", runnerNameLabel: "Runner's Name:", placeholderRunner: "e.g. John Doe",
+                btnStart: "Start", btnPause: "Pause", btnStop: "Stop", btnResume: "Resume", btnSaveRun: "Save Run",
+                penaltySection: "Add penalty seconds (+):", bonusSection: "Deduct bonus time (-):", specialStatusSection: "Set Special Status:",
+                groupRunnerAddLabel: "Add runner to group:", placeholderGroupInput: "Enter name...", groupAddBtn: "Add",
+                groupMassStart: "🏁 Start All", groupProvisioning: "Group Run: Preparing...", noRunsLive: "No Runs", ScreenPopupBtn: "📺 Open Screen View",
+                newBtnTitlePenalty: "Create New Penalty Button (+)", newBtnTitleBonus: "Create New Bonus Button (-)",
+                lblNewBtnName: "Label / Name:", placeholderNewBtn: "e.g. Gate Fault", lblNewBtnSeconds: "Time (in seconds):", placeholderSeconds: "e.g. 5",
+                lblModalCancel: "Cancel", lblModalCreate: "Create", lblEventModalTitle: "Create New Run (Event)", lblNewEventName: "Event Name:", placeholderEvent: "e.g. Summer Run 2026",
+                changelogLoading: "Loading Changelog...", changelogError: "Error loading changelog (Changelog.info not found).", lblChangelogClose: "Close",
+                lblEditModalTitle: "Edit Entry", lblEditRunnerName: "Runner's Name:", lblEditStatus: "Status:", statusRegular: "Regular",
+                lblEditPureTime: "Pure Running Time:", unitHours: "Hrs", unitMinutes: "Min", unitSeconds: "Sec",
+                lblEditPenaltyCount: "Penalty Count:", lblEditPenaltyTime: "Total Penalty Time (Seconds):", lblEditBonusCount: "Bonus Count:", lblEditBonusTime: "Total Bonus Time (Seconds):",
+                alertNameRequired: "Please enter a name for the runner.", alertEventRequired: "Please enter an event name.", alertEventExists: "This event already exists.",
+                alertDeleteEvent: "Irrevocably delete event \"{e}\"?", alertDefaultEventDelete: "The default run cannot be deleted.", alertActiveMeasurementBlock: "Switching blocked during active measurement!",
+                alertGroupRunnerRequired: "Please enter a name for the group runner.", alertJsonImportConfirm: "Import runs into this event?", alertJsonError: "Invalid JSON file.",
+                badgePenalty: "{c}x Penalty (+{t}s)", badgeBonus: "{c}x Bonus (-{t}s)", livePenaltyInfo: "+{t}s Penalty", liveBonusInfo: "-{t}s Bonus",
+                groupPenaltiesLabel: "Penalties:", groupBonusesLabel: "Bonuses:", statusLockedText: "LOCKED", statusReadyText: "Ready...", statusLockedEventText: "Locked"
+            }
+        };
+
+        window.onload = function() {
+            eventList = JSON.parse(localStorage.getItem('runnerEventList')) || ['Standardlauf'];
+            currentEvent = localStorage.getItem('runnerCurrentEventName') || 'Standardlauf';
+            lockedEvents = JSON.parse(localStorage.getItem('runnerLockedEvents')) || [];
+            currentLang = localStorage.getItem('runnerLanguage') || 'de';
+            
+            setLanguage(currentLang); buildEventSelectMenu(); loadRunsForCurrentEvent(); renderCustomButtons('penalty'); renderCustomButtons('bonus'); initTheme(); resetForm(); loadVersionInfo(); loadWhitelabelInfo();
+        };
+
+        window.onunload = function() { if (popupWindow) popupWindow.close(); };
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('runnerLanguage', lang);
+            document.getElementById('langBtnDe').classList.toggle('active', lang === 'de');
+            document.getElementById('langBtnEn').classList.toggle('active', lang === 'en');
+            
+            // Übersetzen aller DOM-Labels
+            const t = i18n[lang];
+            document.getElementById('lblLeaderboardTitle').innerHTML = t.leaderboardTitle;
+            document.getElementById('lblExportDropdown').innerHTML = t.exportDropdown;
+            document.getElementById('lblPdfSave').innerHTML = t.pdfSave;
+            document.getElementById('lblImageShare').innerHTML = t.imageShare;
+            document.getElementById('lblDataDropdown').innerHTML = t.dataDropdown;
+            document.getElementById('lblJsonExport').innerHTML = t.jsonExport;
+            document.getElementById('lblJsonImport').innerHTML = t.jsonImport;
+            document.getElementById('lblHeaderPos').innerHTML = t.headerPos;
+            document.getElementById('lblHeaderName').innerHTML = t.headerName;
+            document.getElementById('lblHeaderTime').innerHTML = t.headerTime;
+            document.getElementById('tabSingleBtn').innerHTML = t.tabSingle;
+            document.getElementById('tabGroupBtn').innerHTML = t.tabGroup;
+            document.getElementById('lblRunnerName').innerHTML = t.runnerNameLabel;
+            document.getElementById('runnerName').placeholder = t.placeholderRunner;
+            document.getElementById('lblPenaltySection').innerHTML = t.penaltySection;
+            document.getElementById('lblBonusSection').innerHTML = t.bonusSection;
+            document.getElementById('lblSpecialStatusSection').innerHTML = t.specialStatusSection;
+            document.getElementById('lblGroupRunnerAdd').innerHTML = t.groupRunnerAddLabel;
+            document.getElementById('groupRunnerInput').placeholder = t.placeholderGroupInput;
+            document.getElementById('lblGroupAddBtn').innerHTML = t.groupAddBtn;
+            document.getElementById('groupMassStartBtn').innerHTML = t.groupMassStart;
+            document.getElementById('lblScreenPopupBtn').innerHTML = t.ScreenPopupBtn;
+            document.getElementById('lblChangelogLink').innerHTML = "Changelog";
+            document.getElementById('lblNewBtnName').innerHTML = t.lblNewBtnName;
+            document.getElementById('newBtnName').placeholder = t.placeholderNewBtn;
+            document.getElementById('lblNewBtnSeconds').innerHTML = t.lblNewBtnSeconds;
+            document.getElementById('newBtnSeconds').placeholder = t.placeholderSeconds;
+            document.getElementById('lblModalCancel').innerHTML = t.lblModalCancel;
+            document.getElementById('lblModalCreate').innerHTML = t.lblModalCreate;
+            document.getElementById('lblEventModalTitle').innerHTML = t.lblEventModalTitle;
+            document.getElementById('lblNewEventName').innerHTML = t.lblNewEventName;
+            document.getElementById('newEventName').placeholder = t.placeholderEvent;
+            document.getElementById('lblEventModalCancel').innerHTML = t.lblModalCancel;
+            document.getElementById('lblEventModalCreate').innerHTML = t.lblModalCreate;
+            document.getElementById('lblChangelogClose').innerHTML = t.lblChangelogClose;
+            document.getElementById('lblEditModalTitle').innerHTML = t.lblEditModalTitle;
+            document.getElementById('lblEditRunnerName').innerHTML = t.lblEditRunnerName;
+            document.getElementById('lblEditStatus').innerHTML = t.lblEditStatus;
+            document.getElementById('editStatus').options[0].text = t.statusRegular;
+            document.getElementById('lblEditPureTime').innerHTML = t.lblEditPureTime;
+            document.getElementById('lblUnitHours').innerHTML = t.unitHours;
+            document.getElementById('lblUnitMinutes').innerHTML = t.unitMinutes;
+            document.getElementById('lblUnitSeconds').innerHTML = t.unitSeconds;
+            document.getElementById('lblEditPenaltyCount').innerHTML = t.lblEditPenaltyCount;
+            document.getElementById('lblEditPenaltyTime').innerHTML = t.lblEditPenaltyTime;
+            document.getElementById('lblEditBonusCount').innerHTML = t.lblEditBonusCount;
+            document.getElementById('lblEditBonusTime').innerHTML = t.lblEditBonusTime;
+            document.getElementById('lblEditModalCancel').innerHTML = t.lblModalCancel;
+            document.getElementById('lblEditModalSave').innerHTML = t.lblEditModalSave;
+
+            // Updates für dynamische Zustände
+            const startBtn = document.getElementById('startBtn');
+            if (!isRunning && !isPaused) startBtn.innerText = t.btnStart;
+            else if (isRunning) startBtn.innerText = t.btnPause;
+            else if (isPaused) startBtn.innerText = t.btnResume;
+            document.getElementById('stopBtn').innerText = t.btnStop;
+            document.getElementById('saveBtn').innerText = t.btnSaveRun;
+
+            buildEventSelectMenu();
+            sortAndDisplayRuns();
+            renderGroupRunners();
+            updateAdjustmentNoticeDisplay();
+            loadWhitelabelInfo();
+        }
+
+        function loadWhitelabelInfo() {
+            fetch('whitelabel.info').then(response => { if (!response.ok) throw new Error(); return response.text(); }).then(text => {
+                const lines = text.split('\n'); let title = i18n[currentLang].title; let url = "";
+                lines.forEach(line => { const tl = line.trim(); if (tl.startsWith('Title=')) title = tl.replace('Title=', '').trim(); else if (tl.startsWith('URL=')) url = tl.replace('URL=', '').trim(); });
+                const el = document.getElementById('whitelabelTitle'); el.innerText = title; if (url) { el.setAttribute('href', url); el.setAttribute('target', '_blank'); } else el.removeAttribute('href');
+            }).catch(() => { const el = document.getElementById('whitelabelTitle'); el.innerText = i18n[currentLang].title; el.removeAttribute('href'); });
+        }
+
+        function loadVersionInfo() { fetch('ver.info').then(res => res.text()).then(v => { document.getElementById('appFooter').innerText = `Version: ${v.trim()}`; }).catch(() => { document.getElementById('appFooter').innerText = 'Version: Lokal / Unbekannt'; }); }
+        
+        function openChangelogModal() {
+            const contentEl = document.getElementById('changelogContent');
+            contentEl.innerText = i18n[currentLang].changelogLoading;
+            document.getElementById('changelogModal').style.display = 'flex';
+            
+            fetch('Changelog.info')
+                .then(res => { if (!res.ok) throw new Error(); return res.text(); })
+                .then(text => { contentEl.innerText = text.trim(); })
+                .catch(() => { contentEl.innerText = i18n[currentLang].changelogError; });
+        }
+        function closeChangelogModal() { document.getElementById('changelogModal').style.display = 'none'; }
+        function closeChangelogModalOnOutsideClick(e) { if(e.target.id === 'changelogModal') closeChangelogModal(); }
+
+        function getCleanDisplayName(name) { return name.replace(/^\[.*?\]/, '').trim(); }
+        function isEmoji(str) { return /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g.test(str); }
+
+        function countryCodeToEmoji(code) {
+            const c = code.toUpperCase();
+            if (c.length === 2) {
+                return String.fromCodePoint(...[...c].map(char => 127397 + char.charCodeAt(0)));
+            }
+            return '🏃';
+        }
+
+        function getFaviconUrl(domain) {
+            return `https://www.google.com/s2/favicons?domain=${domain}`;
+        }
+
+        function getRunnerIconHTML(name, isExportMode = false) {
+            const match = name.match(/^\[(.*?)\]/);
+            if (match) {
+                const content = match[1].trim();
+                const domainRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+                if (domainRegex.test(content)) {
+                    if (isExportMode) return `<span class="runner-icon">🌐</span>`;
+                    let cleanDomain = content.replace(/^(https?:\/\/)?(www\.)?/, '');
+                    return `<span class="runner-icon"><img src="${getFaviconUrl(cleanDomain)}" alt="favicon" onerror="this.onerror=null; this.parentElement.innerHTML='🌐';"></span>`;
+                }
+                if (content.length === 2 || content.length === 3) {
+                    if (!isEmoji(content)) {
+                        return `<span class="runner-icon">${countryCodeToEmoji(content)}</span>`;
+                    }
+                }
+                if (isEmoji(content)) return `<span class="runner-icon">${content}</span>`;
+            }
+            return `<span class="runner-icon">🏃</span>`;
+        }
+
+        function switchTab(mode) {
+            if (isRunning || groupRunners.some(r => r.state === 'running' || r.state === 'paused')) { alert(i18n[currentLang].alertActiveMeasurementBlock); return; }
+            activeTab = mode;
+            document.getElementById('tabSingleBtn').classList.toggle('active', mode === 'single');
+            document.getElementById('tabGroupBtn').classList.toggle('active', mode === 'group');
+            document.getElementById('tabSingleContent').classList.toggle('active', mode === 'single');
+            document.getElementById('tabGroupContent').classList.toggle('active', mode === 'group');
+            if(popupWindow && !popupWindow.closed) { syncPopupRunnerName(); syncPopupNotice(); }
+        }
+
+        // --- Gruppenlauf ---
+        function addRunnerToGroup() {
+            const input = document.getElementById('groupRunnerInput'); const name = input.value.trim(); 
+            if(!name) { alert(i18n[currentLang].alertGroupRunnerRequired); return; }
+            groupRunners.push({ id: Date.now() + Math.random(), name: name, state: 'idle', timeMs: 0, startTime: 0, elapsed: 0, status: 'REGULÄR', penalties: { count: 0, time: 0 }, bonuses: { count: 0, time: 0 } });
+            input.value = ''; renderGroupRunners(); document.getElementById('groupMassActionRow').style.display = 'block';
+        }
+
+        function startAllGroupRunners() {
+            if(groupRunners.length === 0) return; const now = Date.now();
+            groupRunners.forEach(r => { if(r.state === 'idle') { r.state = 'running'; r.startTime = now; } });
+            document.getElementById('groupSetupForm').style.display = 'none'; document.getElementById('groupMassActionRow').style.display = 'none';
+            startGroupTicker(); renderGroupRunners();
+        }
+
+        function startGroupTicker() {
+            if(groupInterval) clearInterval(groupInterval);
+            groupInterval = setInterval(() => {
+                const now = Date.now(); groupRunners.forEach(r => { if(r.state === 'running') { r.timeMs = now - r.startTime + r.elapsed; } });
+                updateGroupLiveDisplays();
+            }, 10);
+        }
+
+        function updateGroupLiveDisplays() {
+            groupRunners.forEach(r => { const el = document.getElementById(`gDisplay_${r.id}`); if(el) el.innerText = r.status === 'DNF' || r.status === 'DNS' ? r.status : formatTime(r.timeMs); });
+            if (popupWindow && !popupWindow.closed) syncPopupLeaderboard();
+        }
+
+        function toggleGroupRunnerTimer(id) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r || r.state === 'stopped') return;
+            if(r.state === 'running') { r.state = 'paused'; r.elapsed = r.timeMs; } else { r.state = 'running'; r.startTime = Date.now(); }
+            renderGroupRunners();
+        }
+
+        function stopGroupRunnerTimer(id) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r) return;
+            r.state = 'stopped'; renderGroupRunners();
+            if(groupRunners.every(runner => runner.state === 'stopped')) clearInterval(groupInterval);
+        }
+
+        function adjustGroupTime(id, mode, secs) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r || r.status === 'DNF' || r.status === 'DNS') return;
+            if(mode === 'penalty') { r.penalties.count++; r.penalties.time += secs; r.timeMs += (secs * 1000); r.elapsed += (secs * 1000); if(r.state === 'running') r.startTime -= (secs * 1000); } 
+            else { r.bonuses.count++; r.bonuses.time += secs; r.timeMs -= (secs * 1000); r.elapsed -= (secs * 1000); if(r.state === 'running') r.startTime += (secs * 1000); }
+            if(r.timeMs < 0) { r.timeMs = 0; r.elapsed = 0; if(r.state === 'running') r.startTime = Date.now(); }
+            renderGroupRunners();
+        }
+
+        function setGroupStatus(id, stat) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r) return;
+            r.status = stat;
+            if(stat === 'DNS' || stat === 'DNF' || stat === 'DNQ') { r.state = 'stopped'; if (stat === 'DNS' || stat === 'DNF') { r.timeMs = 0; r.elapsed = 0; r.penalties = {count:0,time:0}; r.bonuses = {count:0,time:0}; } }
+            renderGroupRunners();
+        }
+
+        function saveGroupRunner(id) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r) return;
+            runs.push({ id: Date.now() + Math.random(), name: r.name, timeMs: r.timeMs, timeString: (r.status === "DNF" || r.status === "DNS") ? r.status : formatTime(r.timeMs), status: r.status, penalties: r.penalties, bonuses: r.bonuses });
+            saveRunsForCurrentEvent(); sortAndDisplayRuns(); groupRunners = groupRunners.filter(runner => runner.id !== id); renderGroupRunners();
+            if(groupRunners.length === 0) { document.getElementById('groupSetupForm').style.display = 'block'; resetForm(); }
+        }
+
+        function renderGroupRunners() {
+            const container = document.getElementById('groupRunnersContainer'); container.innerHTML = '';
+            const t = i18n[currentLang];
+            groupRunners.forEach(r => {
+                const div = document.createElement('div'); div.className = 'group-runner-row';
+                let controls = '';
+                if(r.state === 'idle') controls = `<div class="group-mini-btn-row"><button class="btn group-mini-btn" style="background-color: var(--status-color);" onclick="setGroupStatus(${r.id}, 'DNS')">DNS</button><button class="btn group-mini-btn" style="background-color: var(--danger);" onclick="setGroupStatus(${r.id}, 'DNF')">DNF</button><button class="btn group-mini-btn" style="background-color: #7f8c8d;" onclick="setGroupStatus(${r.id}, 'DNQ')">DNQ</button></div>`;
+                else if(r.state === 'running' || r.state === 'paused') controls = `<div class="group-mini-btn-row"><button class="btn group-mini-btn ${r.state === 'running' ? 'btn-pause' : 'btn-start'}" onclick="toggleGroupRunnerTimer(${r.id})">${r.state === 'running' ? t.btnPause : t.btnResume}</button><button class="btn btn-stop group-mini-btn" onclick="stopGroupRunnerTimer(${r.id})">${t.btnStop}</button></div>`;
+                else if(r.state === 'stopped') {
+                    let mod = '';
+                    if(r.status === 'REGULÄR') mod = `<div style="margin: 8px 0; display:flex; flex-wrap:wrap; gap:4px;">${penaltyTypes.map(p => `<button class="btn" style="background:var(--penalty); font-size:0.75rem; padding:4px 8px;" onclick="adjustGroupTime(${r.id}, 'penalty', ${p.seconds})">${p.name}</button>`).join('')}${bonusTypes.map(b => `<button class="btn" style="background:var(--bonus); font-size:0.75rem; padding:4px 8px;" onclick="adjustGroupTime(${r.id}, 'bonus', ${b.seconds})">${b.name}</button>`).join('')}</div><div style="font-size:0.85rem; font-weight:600; margin-bottom:6px; color:var(--penalty)">${t.groupPenaltiesLabel} +${r.penalties.time}s | ${t.groupBonusesLabel} -${r.bonuses.time}s</div>`;
+                    controls = `${mod}<div class="group-mini-btn-row"><button class="btn btn-start group-mini-btn" onclick="saveGroupRunner(${r.id})">💾 ${t.btnSaveRun}</button>${r.status === 'REGULÄR' ? `<button class="btn group-mini-btn" style="background-color: var(--danger);" onclick="setGroupStatus(${r.id}, 'DNF')">DNF</button><button class="btn group-mini-btn" style="background-color: var(--status-color);" onclick="setGroupStatus(${r.id}, 'DNQ')">DNQ</button>` : ''}</div>`;
+                }
+                div.innerHTML = `<div class="group-runner-header"><span class="group-runner-name-label">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR' ? `[${r.status}]` : ''}</span><span class="group-time-display" id="gDisplay_${r.id}">${r.status === 'DNF' || r.status === 'DNS' ? r.status : formatTime(r.timeMs)}</span></div>${controls}`;
+                container.appendChild(div);
+            });
+            if (popupWindow && !popupWindow.closed) syncPopupLeaderboard();
+        }
+
+        // --- Events ---
+        function buildEventSelectMenu() {
+            const select = document.getElementById('eventSelect'); select.innerHTML = '';
+            const t = i18n[currentLang];
+            eventList.forEach(ev => { const opt = document.createElement('option'); opt.value = ev; opt.innerText = (lockedEvents.includes(ev) ? '🔒 ' : '') + (ev === 'Standardlauf' ? t.defaultEvent : t.trophyEvent + ev); if (ev === currentEvent) opt.selected = true; select.appendChild(opt); });
+            updateLockBtnStyle();
+        }
+        function openEventCreationModal() { 
+            const t = i18n[currentLang];
+            document.getElementById('eventModal').style.display = 'flex'; 
+            document.getElementById('newEventName').focus(); 
+        }
+        function closeEventModal() { document.getElementById('eventModal').style.display = 'none'; document.getElementById('newEventName').value = ''; }
+        function createNewEvent() { const name = document.getElementById('newEventName').value.trim(); if (!name) { alert(i18n[currentLang].alertEventRequired); return; } if (eventList.includes(name)) { alert(i18n[currentLang].alertEventExists); return; } eventList.push(name); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); currentEvent = name; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); closeEventModal(); }
+        function handleEventSelectChange() { currentEvent = document.getElementById('eventSelect').value; localStorage.setItem('runnerCurrentEventName', currentEvent); loadRunsForCurrentEvent(); resetForm(); updateLockBtnStyle(); }
+        function deleteCurrentEvent() { if (currentEvent === 'Standardlauf') { alert(i18n[currentLang].alertDefaultEventDelete); return; } if (!confirm(i18n[currentLang].alertDeleteEvent.replace('{e}', currentEvent))) return; localStorage.removeItem(`runnerLeaderboard_${currentEvent}`); eventList = eventList.filter(e => e !== currentEvent); lockedEvents = lockedEvents.filter(e => e !== currentEvent); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); currentEvent = 'Standardlauf'; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); resetForm(); }
+        function toggleLockCurrentEvent() { if (isRunning || groupRunners.length > 0) { alert(i18n[currentLang].alertActiveMeasurementBlock); return; } if(lockedEvents.includes(currentEvent)) lockedEvents = lockedEvents.filter(e => e !== currentEvent); else lockedEvents.push(currentEvent); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); buildEventSelectMenu(); resetForm(); }
+        function updateLockBtnStyle() { const btn = document.getElementById('lockEventBtn'); const isLocked = lockedEvents.includes(currentEvent); btn.innerText = isLocked ? "🔓" : "🔒"; btn.className = isLocked ? "btn-event-action btn-lock-event is-locked" : "btn-event-action btn-lock-event"; }
+        function loadRunsForCurrentEvent() { runs = JSON.parse(localStorage.getItem(`runnerLeaderboard_${currentEvent}`)) || []; sortAndDisplayRuns(); }
+        function saveRunsForCurrentEvent() { localStorage.setItem(`runnerLeaderboard_${currentEvent}`, JSON.stringify(runs)); }
+
+        // --- Theme & Custom Buttons ---
+        function initTheme() { const saved = localStorage.getItem('theme') || 'light'; document.documentElement.setAttribute('data-theme', saved); document.getElementById('themeIcon').innerText = saved === 'dark' ? "☀️" : "🌙"; document.getElementById('themeText').innerText = saved === 'dark' ? i18n[currentLang].themeLight : i18n[currentLang].themeDark; syncPopupTheme(); }
+        function toggleTheme() { const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', newTheme); localStorage.setItem('theme', newTheme); initTheme(); }
+        function openModal(mode) { if (lockedEvents.includes(currentEvent)) return; currentModalMode = mode; document.getElementById('modalTitle').innerText = mode === 'add_btn_penalty' ? i18n[currentLang].newBtnTitlePenalty : i18n[currentLang].newBtnTitleBonus; document.getElementById('customModal').style.display = 'flex'; document.getElementById('newBtnName').focus(); }
+        function closeModal() { document.getElementById('customModal').style.display = 'none'; document.getElementById('newBtnName').value = ''; document.getElementById('newBtnSeconds').value = ''; }
+        function createNewButton() { const name = document.getElementById('newBtnName').value.trim(), secs = parseInt(document.getElementById('newBtnSeconds').value, 10); if (!name) { alert("Bitte eine Bezeichnung eingeben."); return; } if (isNaN(secs) || secs <= 0) { alert("Bitte eine gültige Sekundenzahl eingeben."); return; } if (currentModalMode === 'add_btn_penalty') { penaltyTypes.push({id: Date.now(), name: `${name} (+${secs}s)`, seconds: secs}); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes.push({id: Date.now(), name: `${name} (-${secs}s)`, seconds: secs}); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } closeModal(); renderGroupRunners(); }
+        function deleteCustomType(id, mode, e) { e.stopPropagation(); if (mode === 'penalty') { penaltyTypes = penaltyTypes.filter(p => p.id !== id); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes = bonusTypes.filter(b => b.id !== id); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } renderGroupRunners(); }
+        function renderCustomButtons(mode) { const container = document.getElementById(mode === 'penalty' ? 'dynamicPenaltyGroup' : 'dynamicBonusGroup'); container.innerHTML = ''; const target = mode === 'penalty' ? penaltyTypes : bonusTypes; const isSaveDisabled = document.getElementById('saveBtn').disabled || lockedEvents.includes(currentEvent); target.forEach(item => { const wrapper = document.createElement('div'); wrapper.className = `custom-btn-container type-${mode}`; wrapper.innerHTML = `<button class="btn-custom-action" ${isSaveDisabled?'disabled':''} onclick="handleTimeAdjustment('${mode}', ${item.seconds})">${item.name}</button><button class="delete-custom-type-btn" ${lockedEvents.includes(currentEvent)?'disabled':''} onclick="deleteCustomType(${item.id}, '${mode}', event)">&times;</button>`; container.appendChild(wrapper); }); }
+        function setActionButtonsDisabled(d) { const isLocked = lockedEvents.includes(currentEvent); document.querySelectorAll('#tabSingleContent .btn-custom-action').forEach(b => b.disabled = d || isLocked); document.getElementById('statusBtnDNQ').disabled = d || isLocked; }
+        function formatTime(ms) { if (ms < 0) ms = 0; let h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000), hh = Math.floor((ms % 1000) / 10); return (h<10?"0":"")+h+":"+(m<10?"0":"")+m+":"+(s<10?"0":"")+s+"."+(hh<10?"0":"")+hh; }
+
+        // --- Zeitmessung Logik (Einzel) ---
+        function toggleTimer() {
+            if (lockedEvents.includes(currentEvent)) return;
+            if (!document.getElementById('runnerName').value.trim()) { alert(i18n[currentLang].alertNameRequired); return; }
+            const startBtn = document.getElementById('startBtn');
+            const t = i18n[currentLang];
+            if (currentStatus !== "REGULÄR") { currentStatus = "REGULÄR"; document.getElementById('display').innerText = "00:00:00.00"; updateAdjustmentNoticeDisplay(); }
+            if (!isRunning) {
+                isRunning = true; startTime = Date.now() - elapsedBeforePause;
+                timerInterval = setInterval(() => { currentTotalMs = Date.now() - startTime; document.getElementById('display').innerText = formatTime(currentTotalMs); syncPopupTime(formatTime(currentTotalMs)); }, 10);
+                startBtn.innerText = t.btnPause; startBtn.className = "btn btn-pause"; document.getElementById('stopBtn').disabled = false; document.getElementById('saveBtn').disabled = true; document.getElementById('runnerName').disabled = true; setActionButtonsDisabled(true);
+            } else { isRunning = false; isPaused = true; clearInterval(timerInterval); elapsedBeforePause = currentTotalMs; startBtn.innerText = t.btnResume; startBtn.className = "btn btn-start"; }
+        }
+        function stopTimer() { isRunning = false; isPaused = false; clearInterval(timerInterval); document.getElementById('startBtn').disabled = true; document.getElementById('startBtn').innerText = i18n[currentLang].btnStart; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = lockedEvents.includes(currentEvent); setActionButtonsDisabled(false); }
+        function handleTimeAdjustment(mode, secs) { if (currentStatus !== "REGULÄR") return; if (mode === 'penalty') { penaltyCount++; penaltyTime += secs; currentTotalMs += (secs*1000); elapsedBeforePause += (secs*1000); if(isRunning) startTime -= (secs*1000); } else { bonusCount++; bonusTime += secs; currentTotalMs -= (secs*1000); elapsedBeforePause -= (secs*1000); if(isRunning) startTime += (secs*1000); } if (currentTotalMs < 0) { currentTotalMs = 0; elapsedBeforePause = 0; if(isRunning) startTime = Date.now(); } document.getElementById('display').innerText = formatTime(currentTotalMs); syncPopupTime(formatTime(currentTotalMs)); updateAdjustmentNoticeDisplay(); }
+        function handleStatusSet(s) { if (lockedEvents.includes(currentEvent)) return; if (!document.getElementById('runnerName').value.trim()) { alert(i18n[currentLang].alertNameRequired); return; } currentStatus = s; if (s !== "REGULÄR") { isRunning = false; clearInterval(timerInterval); if (s === "DNF" || s === "DNS") { currentTotalMs = 0; elapsedBeforePause = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; document.getElementById('display').innerText = "--:--:--.--"; syncPopupTime(s); } document.getElementById('startBtn').disabled = true; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = false; document.getElementById('runnerName').disabled = true; } updateAdjustmentNoticeDisplay(); }
+        function updateAdjustmentNoticeDisplay() { const n = document.getElementById('adjustmentNotice'); const t = i18n[currentLang]; if (currentStatus !== "REGULÄR") { n.innerText = `Status: ${currentStatus}`; n.className = "adjustment-display status-info"; } else { let msg = ""; if (penaltyTime > 0) msg += t.livePenaltyInfo.replace('{t}', penaltyTime) + " "; if (bonusTime > 0) msg += t.liveBonusInfo.replace('{t}', bonusTime); n.innerText = msg.trim(); n.className = `adjustment-display ${penaltyTime >= bonusTime ? 'penalty' : 'bonus'}`; } syncPopupNotice(); }
+        function saveRun() { if (lockedEvents.includes(currentEvent)) return; if(!document.getElementById('runnerName').value.trim()) { alert(i18n[currentLang].alertNameRequired); return; } runs.push({ id: Date.now(), name: document.getElementById('runnerName').value.trim(), timeMs: currentTotalMs, timeString: (currentStatus === "DNF" || currentStatus === "DNS") ? currentStatus : formatTime(currentTotalMs), status: currentStatus, penalties: { count: penaltyCount, time: penaltyTime }, bonuses: { count: bonusCount, time: bonusTime } }); saveRunsForCurrentEvent(); sortAndDisplayRuns(); resetForm(); }
+        function resetForm() { isRunning = false; isPaused = false; clearInterval(timerInterval); elapsedBeforePause = 0; currentTotalMs = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; currentStatus = "REGULÄR"; const isLocked = lockedEvents.includes(currentEvent); document.getElementById('timingCard').style.display = isLocked ? 'none' : 'block'; document.getElementById('runnerName').value = ""; document.getElementById('runnerName').disabled = isLocked; document.getElementById('display').innerText = "00:00:00.00"; document.getElementById('adjustmentNotice').innerText = ""; document.getElementById('startBtn').disabled = isLocked; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = true; document.getElementById('statusBtnDNS').disabled = isLocked; document.getElementById('statusBtnDNF').disabled = isLocked; document.getElementById('statusBtnDNQ').disabled = true; document.getElementById('addPenaltyTypeBtn').disabled = isLocked; document.getElementById('addBonusTypeBtn').disabled = isLocked; renderCustomButtons('penalty'); renderCustomButtons('bonus'); groupRunners = []; renderGroupRunners(); document.getElementById('groupSetupForm').style.display = 'block'; document.getElementById('groupMassActionRow').style.display = 'none'; syncPopupRunnerName(); syncPopupTime(isLocked ? i18n[currentLang].statusLockedText : "00:00:00.00"); syncPopupNotice(); }
+
+        // --- Bestenliste Renderer ---
+        function sortAndDisplayRuns(isExportMode = false) {
+            runs.sort((a, b) => { const ord = { "REGULÄR": 1, "DNQ": 2, "DNF": 3, "DNS": 4 }; if (ord[a.status] !== ord[b.status]) return ord[a.status] - ord[b.status]; if (a.status === "REGULÄR" || a.status === "DNQ") return a.timeMs - b.timeMs; return a.name.localeCompare(b.name); });
+            const ol = document.getElementById('leaderboard'); ol.innerHTML = "";
+            const t = i18n[currentLang];
+            document.getElementById('leaderboardHeader').style.display = runs.length > 0 ? 'flex' : 'none';
+            if (runs.length === 0) { ol.innerHTML = `<li class="empty-state">${t.emptyState}</li>`; if (popupWindow && !popupWindow.closed) syncPopupLeaderboard(); return; }
+            runs.forEach((run, index) => {
+                const li = document.createElement('li'); li.className = "leaderboard-item";
+                let b = ''; if (run.status !== "REGULÄR") b += `<span class="badge badge-status">${run.status}</span>`; if (run.penalties?.time > 0) b += `<span class="badge badge-penalty">${t.badgePenalty.replace('{c}', run.penalties.count).replace('{t}', run.penalties.time)}</span>`; if (run.bonuses?.time > 0) b += `<span class="badge badge-bonus">${t.badgeBonus.replace('{c}', run.bonuses.count).replace('{t}', run.bonuses.time)}</span>`;
+                let actionButtonsHTML = isExportMode ? '' : `<button class="action-btn edit-btn" onclick="openEditModal(${run.id})">📝</button><button class="action-btn delete-btn" onclick="deleteRun(${run.id})">&times;</button>`;
+                li.innerHTML = `<div class="runner-info"><span class="rank">#${index + 1}</span><div><div class="runner-name-container">${getRunnerIconHTML(run.name, isExportMode)}<span class="runner-name">${escapeHTML(getCleanDisplayName(run.name))}</span></div><div class="stats-badges">${b}</div></div></div><div class="right-side-container"><span class="runner-time">${run.timeString}</span>${actionButtonsHTML}</div>`;
+                ol.appendChild(li);
+            });
+            if (!isExportMode && popupWindow && !popupWindow.closed) syncPopupLeaderboard();
+        }
+        function deleteRun(id) { runs = runs.filter(r => r.id !== id); saveRunsForCurrentEvent(); sortAndDisplayRuns(); }
+
+        // --- Bearbeiten Modus ---
+        function openEditModal(id) {
+            const run = runs.find(r => r.id === id); if (!run) return;
+            document.getElementById('editRunId').value = run.id; document.getElementById('editRunnerName').value = run.name; document.getElementById('editStatus').value = run.status;
+            let totalMs = run.timeMs || 0;
+            document.getElementById('editHours').value = Math.floor(totalMs / 3600000); document.getElementById('editMinutes').value = Math.floor((totalMs % 3600000) / 60000); document.getElementById('editSeconds').value = Math.floor((totalMs % 60000) / 1000); document.getElementById('editHundredths').value = Math.floor((totalMs % 1000) / 10);
+            document.getElementById('editPenaltyCount').value = run.penalties ? run.penalties.count : 0; document.getElementById('editPenaltyTime').value = run.penalties ? run.penalties.time : 0;
+            document.getElementById('editBonusCount').value = run.bonuses ? run.bonuses.count : 0; document.getElementById('editBonusTime').value = run.bonuses ? run.bonuses.time : 0;
+            toggleEditTimeField(); document.getElementById('editModal').style.display = 'flex';
+        }
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+        function toggleEditTimeField() { document.getElementById('editTimeGroup').style.display = (document.getElementById('editStatus').value === "DNF" || document.getElementById('editStatus').value === "DNS") ? 'none' : 'flex'; }
+        function submitEditRun() {
+            const id = parseFloat(document.getElementById('editRunId').value); const index = runs.findIndex(r => r.id === id); if (index === -1) return;
+            const stat = document.getElementById('editStatus').value; let timeMs = 0;
+            let pCount = parseInt(document.getElementById('editPenaltyCount').value, 10) || 0; let pTime = parseInt(document.getElementById('editPenaltyTime').value, 10) || 0;
+            let bCount = parseInt(document.getElementById('editBonusCount').value, 10) || 0; let bTime = parseInt(document.getElementById('editBonusTime').value, 10) || 0;
+            if (stat !== "DNF" && stat !== "DNS") timeMs = (parseInt(document.getElementById('editHours').value, 10)||0)*3600000 + (parseInt(document.getElementById('editMinutes').value, 10)||0)*60000 + (parseInt(document.getElementById('editSeconds').value, 10)||0)*1000 + (parseInt(document.getElementById('editHundredths').value, 10)||0)*10;
+            else { pCount = 0; pTime = 0; bCount = 0; bTime = 0; }
+            runs[index] = { id: id, name: document.getElementById('editRunnerName').value.trim()||"Unbekannt", status: stat, timeMs: timeMs, timeString: (stat==="DNF"||stat==="DNS")?stat:formatTime(timeMs), penalties: { count: pCount, time: pTime }, bonuses: { count: bCount, time: bTime } };
+            saveRunsForCurrentEvent(); sortAndDisplayRuns(); closeEditModal();
+        }
+
+        // --- Daten Export / Import ---
+        function exportJSONData() { if (runs.length === 0) return; const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(runs, null, 2)); const a = document.createElement('a'); a.setAttribute("href", data); a.setAttribute("download", `Bestenliste_${currentEvent.replace(/[^a-z0-9]/gi, '_')}.json`); document.body.appendChild(a); a.click(); a.remove(); }
+        function triggerJSONImport() { if (!lockedEvents.includes(currentEvent)) document.getElementById('jsonImportInput').click(); }
+        function importJSONData(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = e => { try { const data = JSON.parse(e.target.result); if (Array.isArray(data) && confirm(i18n[currentLang].alertJsonImportConfirm)) { runs = data; saveRunsForCurrentEvent(); sortAndDisplayRuns(); } } catch { alert(i18n[currentLang].alertJsonError); } document.getElementById('jsonImportInput').value = ''; }; reader.readAsText(file); }
+
+        // --- Popup Leinwand ---
+        function openScreenPopup() {
+            if (popupWindow && !popupWindow.closed) { popupWindow.focus(); return; }
+            popupWindow = window.open("", "LeinwandAnsicht", "width=1000,height=600,scrollbars=yes,resizable=yes");
+            popupWindow.document.write(`<!DOCTYPE html><html><head><title>Live-Anzeige</title><style>:root { --bg-color: #f4f7f6; --card-bg: #ffffff; --primary: #2c3e50; --accent: #3498db; --danger: #e74c3c; --success: #2ecc71; --text: #333333; --border-color: #dddddd; --penalty: #f39c12; --bonus: #9b59b6; --status: #7f8c8d; } [data-theme="dark"] { --bg-color: #1a1a1a; --card-bg: #2d2d2d; --primary: #ecf0f1; --accent: #5dade2; --text: #e0e0e0; --border-color: #444444; } body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; height: 100vh; box-sizing: border-box; display: flex; gap: 20px; } .left-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; overflow-y: auto; } .right-pane { width: 350px; background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; } #pRunnerName { font-size: 2.5rem; font-weight: bold; color: var(--accent); margin: 0 0 20px 0; min-height: 3.5rem; word-break: break-word; } #pDisplay { font-family: 'Courier New', monospace; font-size: 5.5rem; font-weight: bold; color: var(--primary); letter-spacing: 2px; margin: 20px 0; } #pNotice { font-size: 1.8rem; font-weight: 600; min-height: 2.5rem; } .notice-penalty { color: var(--danger); } .notice-bonus { color: var(--success); } .notice-status { color: var(--status); } h2 { margin-top: 0; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; font-size: 1.4rem; color: var(--primary); } .pop-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; } .pop-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid var(--border-color); font-size: 1.05rem; } .pop-rank { font-weight: bold; color: var(--accent); margin-right: 10px; } .pop-time { font-family: 'Courier New', monospace; font-weight: bold; } .p-badge { font-size: 0.7rem; padding: 1px 4px; border-radius: 3px; color: white; font-weight: bold; margin-left: 4px; display: inline-block; } .pb-p { background-color: var(--penalty); } .pb-b { background-color: var(--bonus); } .pb-s { background-color: var(--status); } .multi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; width: 100%; } .multi-box { background: var(--bg-color); padding: 15px; border-radius: 8px; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); } .multi-name { font-size: 1.5rem; font-weight: bold; color: var(--accent); } .multi-time { font-family: 'Courier New', monospace; font-size: 2.5rem; font-weight: bold; margin: 10px 0; } .pop-name-container { display: flex; align-items: center; gap: 6px; } .pop-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; font-size: 1.05rem; }</style></head><body><div class="left-pane" id="pLeftPane"><div id="pRunnerName">Ready...</div><div id="pDisplay">00:00:00.00</div><div id="pNotice"></div></div><div class="right-pane"><h2 id="pPopHeader">🏆 Leaderboard</h2><ol id="pLeaderboard" class="pop-list"></ol></div></body></html>`);
+            popupWindow.document.close(); syncPopupTheme(); syncPopupRunnerName(); syncPopupNotice(); syncPopupLeaderboard();
+        }
+
+        function syncPopupTheme() { if (popupWindow && !popupWindow.closed) popupWindow.document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'light'); }
+        function syncPopupRunnerName() { if (!popupWindow || popupWindow.closed || activeTab === 'group') return; popupWindow.document.getElementById('pRunnerName').innerText = getCleanDisplayName(document.getElementById('runnerName').value.trim()) || (lockedEvents.includes(currentEvent) ? i18n[currentLang].statusLockedEventText : i18n[currentLang].statusReadyText); }
+        function syncPopupTime(t) { if (popupWindow && !popupWindow.closed && activeTab === 'single') popupWindow.document.getElementById('pDisplay').innerText = t; }
+        function syncPopupNotice() { if (!popupWindow || popupWindow.closed || activeTab === 'group') return; const el = popupWindow.document.getElementById('pNotice'); if (currentStatus !== "REGULÄR") { el.innerText = `Status: ${currentStatus}`; el.className = "notice-status"; } else { el.innerText = ((penaltyTime > 0 ? `+${penaltyTime}s ` : '') + (bonusTime > 0 ? `-${bonusTime}s` : '')).trim(); el.className = penaltyTime >= bonusTime ? "notice-penalty" : "notice-bonus"; } }
+        
+        function syncPopupLeaderboard() {
+            if (!popupWindow || popupWindow.closed) return;
+            popupWindow.document.getElementById('pPopHeader').innerText = i18n[currentLang].leaderboardTitle;
+            const pOl = popupWindow.document.getElementById('pLeaderboard'); pOl.innerHTML = "";
+            const t = i18n[currentLang];
+            if (runs.length === 0) pOl.innerHTML = `<li style="text-align:center;color:#7f8c8d;font-style:italic;padding-top:20px;">${t.noRunsLive}</li>`;
+            else runs.forEach((run, index) => { const li = popupWindow.document.createElement('li'); li.className = "pop-item"; let tags = (run.status !== "REGULÄR" ? `<span class="p-badge pb-s">${run.status}</span>` : '') + (run.penalties?.time > 0 ? `<span class="p-badge pb-p">+${run.penalties.time}s</span>` : '') + (run.bonuses?.time > 0 ? `<span class="p-badge pb-b">-${run.bonuses.time}s</span>` : ''); li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">#${index+1}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div class="pop-time">${run.timeString}</div>`; pOl.appendChild(li); });
+            const leftPane = popupWindow.document.getElementById('pLeftPane');
+            if(activeTab === 'single') { if(!popupWindow.document.getElementById('pDisplay')) { leftPane.innerHTML = '<div id="pRunnerName">Ready...</div><div id="pDisplay">00:00:00.00</div><div id="pNotice"></div>'; syncPopupRunnerName(); syncPopupNotice(); } }
+            else { if(groupRunners.length === 0) leftPane.innerHTML = `<div style="font-size:2rem; font-weight:bold; color:var(--text-light)">${t.groupProvisioning}</div>`; else leftPane.innerHTML = `<div class="multi-grid">${groupRunners.map(r => `<div class="multi-box"><div class="multi-name">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR'?'['+r.status+']':''}</div><div class="multi-time">${r.status==='DNF'||r.status==='DNS'?r.status:formatTime(r.timeMs)}</div><div style="font-size:0.9rem; color:var(--text-light)">${t.groupPenaltiesLabel} +${r.penalties.time}s | ${t.groupBonusesLabel} -${r.bonuses.time}s</div></div>`).join('')}</div>`; }
+        }
+
+        // --- Export ---
+        function prepareExportStyles() {
+            const element = document.getElementById('leaderboardCard'), cardHeader = document.getElementById('cardHeader');
+            const pdfEventTitle = document.getElementById('pdfEventTitle');
+            const t = i18n[currentLang];
+            pdfEventTitle.innerText = currentEvent === 'Standardlauf' ? t.leaderboardTitle : currentEvent;
+            
+            cardHeader.style.display = 'none'; pdfEventTitle.style.display = 'block'; element.classList.add('pdf-export-mode');
+            sortAndDisplayRuns(true);
+
+            return () => { 
+                cardHeader.style.display = 'flex'; pdfEventTitle.style.display = 'none'; element.classList.remove('pdf-export-mode'); 
+                sortAndDisplayRuns(false);
+            };
+        }
+
+        function exportToPDF() { if (runs.length === 0) return; const reset = prepareExportStyles(); setTimeout(() => { html2pdf().set({ margin: 15, filename: `Bestenliste_${currentEvent.replace(/[^a-z0-9]/gi, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: false, logging: false }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.getElementById('leaderboardCard')).save().then(reset).catch(reset); }, 150); }
+        async function shareAsImage() { if (runs.length === 0) return; const reset = prepareExportStyles(); try { setTimeout(async () => { const canvas = await html2canvas(document.getElementById('leaderboardCard'), { scale: 2, backgroundColor: '#ffffff', useCORS: false }); reset(); canvas.toBlob(async (blob) => { const file = new File([blob], 'bestenliste.png', { type: 'image/png' }); if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Ergebnisse' }); else { const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'Bestenliste.png'; a.click(); } }); }, 150); } catch { reset(); } }
+        function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
+    </script>
+</body>
+</html>

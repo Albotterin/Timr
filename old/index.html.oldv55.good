@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeitmessung & Bestenliste</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --penalty: #f39c12;
+            --bonus: #9b59b6;
+            --status-color: #7f8c8d;
+            --text: #333333;
+            --text-light: #7f8c8d;
+            --border-color: #dddddd;
+            --item-hover: #fafafa;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --primary: #ecf0f1;
+            --accent: #5dade2;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --penalty: #e67e22;
+            --bonus: #8e44ad;
+            --status-color: #95a5a6;
+            --text: #e0e0e0;
+            --text-light: #95a5a6;
+            --border-color: #444444;
+            --item-hover: #3a3a3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        .top-bar { 
+            width: 100%; 
+            max-width: 600px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 15px; 
+            gap: 15px;
+        }
+        
+        .whitelabel-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .whitelabel-title[href]:hover {
+            color: var(--accent);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 50%;
+            transition: transform 0.1s, filter 0.2s;
+            filter: grayscale(40%);
+        }
+        .lang-btn:hover { transform: scale(1.1); filter: grayscale(0%); }
+        .lang-btn.active { filter: grayscale(0%); transform: scale(1.15); font-weight: bold; }
+
+        .theme-toggle-btn {
+            background: var(--card-bg); border: 2px solid var(--border-color); color: var(--text);
+            padding: 8px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s;
+        }
+        .theme-toggle-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 25px; }
+        .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 25px; transition: background-color 0.3s, box-shadow 0.3s; }
+        
+        .event-management-block { width: 100%; }
+        .event-select { width: 100%; padding: 12px; font-size: 1.1rem; font-weight: bold; color: var(--primary); border: 2px solid var(--border-color); border-radius: 8px; background-color: var(--card-bg); outline: none; cursor: pointer; display: block; margin-bottom: 12px; }
+        
+        .event-buttons-row { display: table; width: 100%; table-layout: fixed; }
+        .event-btn-cell { display: table-cell; padding: 0 5px; }
+        .event-btn-cell:first-child { padding-left: 0; }
+        .event-btn-cell:last-child { padding-right: 0; }
+        
+        .btn-event-action { color: white; border: none; width: 100%; height: 48px; border-radius: 8px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: block; transition: opacity 0.2s; text-align: center; }
+        .btn-event-action:hover { opacity: 0.9; }
+        .btn-create-event { background-color: var(--accent); font-size: 1.5rem; }
+        .btn-lock-event { background-color: #2c3e50; }
+        .btn-lock-event.is-locked { background-color: var(--danger); }
+        .btn-delete-event { background-color: var(--danger); }
+
+        .tabs-container { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; gap: 5px; }
+        .tab-btn { flex: 1; padding: 12px; background: none; border: none; color: var(--text-light); font-weight: bold; font-size: 1rem; cursor: pointer; border-radius: 8px 8px 0 0; transition: all 0.2s; }
+        .tab-btn:hover { background-color: var(--item-hover); }
+        .tab-btn.active { color: var(--accent); border-bottom: 3px solid var(--accent); background-color: var(--item-hover); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        #pdfEventTitle { display: none; margin: 0 0 15px 0; color: #2c3e50; font-size: 1.8rem; text-align: center; }
+        .card-header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; margin-bottom: 15px; gap: 10px; }
+        h2 { margin: 0; color: var(--primary); font-size: 1.5rem; flex-grow: 1; }
+        .header-actions { display: flex; gap: 8px; }
+
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { 
+            display: none; position: absolute; right: 0; top: 100%; background-color: var(--card-bg); 
+            min-width: 180px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.15); border: 1px solid var(--border-color);
+            border-radius: 6px; z-index: 10; overflow: hidden; margin-top: 5px;
+        }
+        .dropdown-content button, .dropdown-content a { 
+            color: var(--text); padding: 12px 16px; text-decoration: none; display: block; 
+            width: 100%; border: none; background: none; text-align: left; font-size: 0.9rem; 
+            font-weight: 500; cursor: pointer; transition: background-color 0.2s;
+        }
+        .dropdown-content button:hover, .dropdown-content a:hover { background-color: var(--item-hover); }
+        .dropdown:hover .dropdown-content { display: block; }
+
+        .dropdown-content .menu-label-row {
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid var(--border-color); padding: 10px 16px; font-size: 0.85rem; font-weight: 600; color: var(--text-light);
+        }
+
+        .btn-action-header { color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.2s; }
+        .btn-action-header:hover { opacity: 0.9; }
+        .btn-export-dropdown { background-color: #8e44ad; }
+        .btn-data-dropdown { background-color: #27ae60; }
+
+        .leaderboard-header { display: flex; padding: 10px; font-weight: bold; border-bottom: 2px solid var(--border-color); color: var(--primary); margin-bottom: 5px; font-size: 0.9rem; }
+        .header-pos { width: 35px; }
+        .header-name { flex-grow: 1; padding-left: 10px; }
+        .header-time { width: 130px; text-align: right; padding-right: 15px; flex-shrink: 0; }
+
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+        .leaderboard-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid var(--border-color); transition: background 0.2s; gap: 15px; }
+        .leaderboard-item:last-child { border-bottom: none; }
+        .leaderboard-item:hover { background-color: var(--item-hover); }
+
+        .runner-info { display: flex; align-items: center; gap: 12px; flex-grow: 1; min-width: 0; }
+        .rank { font-weight: bold; color: var(--accent); width: 25px; flex-shrink: 0; }
+        
+        .runner-name-container { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .runner-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 16px; font-size: 1.1rem; flex-shrink: 0; }
+        .runner-icon img { width: 16px; height: 16px; object-fit: contain; }
+        
+        .runner-name { font-weight: 500; word-break: break-word; overflow-wrap: break-word; min-width: 0; }
+        
+        .stats-badges { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.75rem; margin-top: 4px; font-weight: 600; }
+        .badge { padding: 2px 6px; border-radius: 4px; color: white; }
+        .badge-penalty { background-color: var(--penalty); }
+        .badge-bonus { background-color: var(--bonus); }
+        .badge-status { background-color: var(--status-color); }
+
+        .right-side-container { display: flex; align-items: center; gap: 10px; width: 130px; justify-content: flex-end; flex-shrink: 0; }
+        .runner-time { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: var(--primary); }
+
+        .action-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; transition: color 0.2s; padding: 0 4px; color: var(--text-light); flex-shrink: 0; }
+        .edit-btn:hover { color: var(--accent); }
+        .delete-btn:hover { color: var(--danger); }
+        .empty-state { text-align: center; color: var(--text-light); font-style: italic; padding: 10px 0; }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        .input-inline-group { display: flex; gap: 8px; }
+        .input-inline-group input { flex: 1; }
+        label { font-weight: 600; color: var(--primary); }
+
+        input[type="text"], input[type="number"], select { padding: 12px; border: 2px solid var(--border-color); background-color: var(--card-bg); color: var(--text); border-radius: 8px; font-size: 1rem; outline: none; transition: border-color 0.2s, background-color 0.3s, color 0.3s; }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--accent); }
+
+        .time-inputs-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .time-input-container { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-light); font-weight: 600; }
+        .time-inputs-row input { width: 100%; box-sizing: border-box; text-align: center; padding: 10px 5px; }
+
+        .stopwatch-display { font-family: 'Courier New', Courier, monospace; font-size: 3rem; text-align: center; font-weight: bold; color: var(--primary); margin: 20px 0; letter-spacing: 2px; }
+        .adjustment-display { text-align: center; font-weight: 600; height: 20px; margin-bottom: 15px; font-size: 1.1rem; }
+        .adjustment-display.penalty { color: var(--danger); }
+        .adjustment-display.bonus { color: var(--success); }
+        .adjustment-display.status-info { color: var(--status-color); }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: opacity 0.2s, transform 0.1s; color: white; display: flex; justify-content: center; align-items: center; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-start { background-color: var(--success); }
+        .btn-pause { background-color: var(--warning); color: #333; }
+        .btn-stop { background-color: var(--danger); }
+        .btn-popup-view { background-color: #34495e; grid-column: span 2; }
+        .btn-save { background-color: var(--accent); grid-column: span 2; }
+
+        .management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; margin-top: 10px; }
+        .btn-add-type { color: white; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: opacity 0.2s; }
+        .btn-add-type.penalty-add { background-color: var(--penalty); }
+        .btn-add-type.bonus-add { background-color: var(--bonus); }
+
+        .dynamic-button-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .custom-btn-container { border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: white; display: inline-flex; align-items: center; }
+        .custom-btn-container.type-penalty { background-color: var(--penalty); }
+        .custom-btn-container.type-bonus { background-color: var(--bonus); }
+        .custom-btn-container.type-status { background-color: var(--status-color); }
+
+        .btn-custom-action { background: none; border: none; color: white; padding: 12px 15px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .btn-custom-action:hover:not(:disabled) { background-color: rgba(0, 0, 0, 0.1); }
+        .btn-custom-action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .delete-custom-type-btn { background: rgba(0, 0, 0, 0.15); border: none; color: white; padding: 0 10px; align-self: stretch; cursor: pointer; font-size: 1rem; transition: background-color 0.2s; }
+        .delete-custom-type-btn:hover { background-color: var(--danger); }
+
+        .group-runners-list { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .group-runner-row { background: var(--bg-color); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); }
+        .group-runner-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .group-runner-name-label { font-weight: bold; font-size: 1.1rem; }
+        .group-time-display { font-family: 'Courier New', monospace; font-size: 1.6rem; font-weight: bold; }
+        .group-mini-btn-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .group-mini-btn { flex: 1; min-width: 70px; padding: 8px; font-size: 0.85rem; }
+
+        .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+        .pdf-export-mode { padding: 30px !important; color: #000000 !important; background: #ffffff !important; box-shadow: none !important; }
+        .pdf-export-mode * { color: #000000 !important; background-color: transparent !important; border-color: #cccccc !important; }
+        .pdf-export-mode .runner-time { color: #000000 !important; font-weight: bold !important; }
+        .pdf-export-mode .runner-name { color: #000000 !important; font-weight: 600 !important; }
+        .pdf-export-mode .rank { color: #3498db !important; font-weight: bold !important; }
+        .pdf-export-mode .badge { color: #ffffff !important; font-weight: bold !important; }
+        .pdf-export-mode .badge-penalty { background-color: #f39c12 !important; }
+        .pdf-export-mode .badge-bonus { background-color: #9b59b6 !important; }
+        .pdf-export-mode .badge-status { background-color: #7f8c8d !important; }
+        .pdf-export-mode .leaderboard-header { border-color: #cccccc !important; }
+
+        .pdf-export-mode .action-btn { display: none !important; }
+
+        .app-footer { margin-top: 40px; margin-bottom: 20px; font-size: 0.85rem; color: var(--text-light); text-align: center; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        
+        .changelog-link { color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        .changelog-link:hover { opacity: 0.8; text-decoration: underline; }
+        
+        .changelog-pre { font-family: 'Consolas', 'Courier New', Courier, monospace; background: var(--bg-color); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); white-space: pre-wrap; word-break: break-all; text-align: left; max-height: 250px; overflow-y: auto; color: var(--text); }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <a id="whitelabelTitle" class="whitelabel-title">⏱️ Zeitmessung</a>
+        <div class="top-bar-actions">
+            <!-- Vereintes Einstellungs-Dropdown -->
+            <div class="dropdown">
+                <button id="lblSettingsDropdown" class="theme-toggle-btn">⚙️ <span id="lblSettingsText">Optionen</span></button>
+                <div class="dropdown-content">
+                    <!-- Buy me a Coffee -->
+                    <a href="#" id="coffeeLink" style="display: none;" target="_blank">
+                        <span id="lblCoffeeText">☕ Kaffee spendieren</span>
+                    </a>
+                    <!-- Light/Dark Mode Toggle -->
+                    <button id="themeToggleBtn" onclick="toggleTheme()">
+                        <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
+                    </button>
+                    <!-- Sprachauswahl -->
+                    <div class="menu-label-row">
+                        <span id="lblLanguage">Sprache:</span>
+                        <div style="display: flex; gap: 5px;">
+                            <button id="langBtnDe" class="lang-btn active" onclick="setLanguage('de')" title="Deutsch">🇩🇪</button>
+                            <button id="langBtnEn" class="lang-btn" onclick="setLanguage('en')" title="English">🇬🇧</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="jsonImportInput" accept=".json" style="display: none;" onchange="importJSONData(event)">
+
+    <div class="container">
+        <!-- Event-Bereich -->
+        <div class="card event-setting">
+            <div class="event-management-block">
+                <select id="eventSelect" class="event-select" onchange="handleEventSelectChange()"></select>
+                <div class="event-buttons-row">
+                    <div class="event-btn-cell"><button class="btn-event-action btn-create-event" onclick="openEventCreationModal()" title="Neuen Lauf anlegen">+</button></div>
+                    <div class="event-btn-cell"><button id="lockEventBtn" class="btn-event-action btn-lock-event" onclick="toggleLockCurrentEvent()" title="Lauf abschließen/öffnen">🔒</button></div>
+                    <div class="event-btn-cell"><button class="btn-event-action btn-delete-event" onclick="deleteCurrentEvent()" title="Diesen Lauf löschen">🗑️</button></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bereich 1: Bestenliste -->
+        <div class="card" id="leaderboardCard">
+            <h1 id="pdfEventTitle">Bestenliste</h1>
+            <div class="card-header-container" id="cardHeader">
+                <h2 id="lblLeaderboardTitle">🏆 Bestenliste</h2>
+                <div class="header-actions">
+                    <div class="dropdown">
+                        <button id="lblExportDropdown" class="btn-action-header btn-export-dropdown">📤 Export</button>
+                        <div class="dropdown-content">
+                            <button id="lblPdfSave" onclick="exportToPDF()">PDF speichern</button>
+                            <button id="lblImageShare" onclick="shareAsImage()">Bild teilen/speichern</button>
+                            <button id="lblLinkExport" onclick="exportToLink()">Link kopieren</button>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button id="lblDataDropdown" class="btn-action-header btn-data-dropdown">💾 Daten</button>
+                        <div class="dropdown-content">
+                            <button id="lblJsonExport" onclick="exportJSONData()">Export (JSON)</button>
+                            <button id="lblJsonImport" onclick="triggerJSONImport()">Import (JSON)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kopfzeile für die Tabelle -->
+            <div class="leaderboard-header" id="leaderboardHeader" style="display:none;">
+                <div class="header-pos" id="lblHeaderPos">Pos.</div>
+                <div class="header-name" id="lblHeaderName">Name</div>
+                <div class="header-time" id="lblHeaderTime">Zeit</div>
+            </div>
+
+            <ol id="leaderboard" class="leaderboard-list"></ol>
+        </div>
+
+        <!-- Bereich 2: Zeitmessung -->
+        <div class="card" id="timingCard">
+            <div class="tabs-container">
+                <button id="tabSingleBtn" class="tab-btn active" onclick="switchTab('single')">👤 Einzelläufer</button>
+                <button id="tabGroupBtn" class="tab-btn" onclick="switchTab('group')">👥 Gruppenlauf</button>
+            </div>
+            
+            <!-- TAB: Einzelläufer -->
+            <div id="tabSingleContent" class="tab-content active">
+                <div class="form-group">
+                    <label id="lblRunnerName" for="runnerName">Name des Läufers:</label>
+                    <input type="text" id="runnerName" placeholder="z.B. Max Mustermann" autocomplete="off" oninput="syncPopupRunnerName()">
+                </div>
+
+                <div class="stopwatch-display" id="display">00:00:00.00</div>
+                <div id="adjustmentNotice" class="adjustment-display"></div>
+
+                <div class="btn-group">
+                    <button class="btn btn-start" id="startBtn" onclick="toggleTimer()">Start</button>
+                    <button class="btn btn-stop" id="stopBtn" onclick="stopTimer()" disabled>Stop</button>
+                </div>
+
+                <div class="management-header">
+                    <label id="lblPenaltySection">Strafsekunden hinzufügen (+):</label>
+                    <button id="addPenaltyTypeBtn" class="btn-add-type penalty-add" onclick="openModal('add_btn_penalty')">+</button>
+                </div>
+                <div id="dynamicPenaltyGroup" class="dynamic-button-group"></div>
+
+                <div class="management-header">
+                    <label id="lblBonusSection">Bonuszeit abziehen (-):</label>
+                    <button id="addBonusTypeBtn" class="btn-add-type bonus-add" onclick="openModal('add_btn_bonus')">+</button>
+                </div>
+                <div id="dynamicBonusGroup" class="dynamic-button-group"></div>
+
+                <div class="management-header"><label id="lblSpecialStatusSection">Spezial-Status setzen:</label></div>
+                <div class="dynamic-button-group">
+                    <div class="custom-btn-container type-status"><button id="statusBtnDNS" class="btn-custom-action" onclick="handleStatusSet('DNS')">DNS</button></div>
+                    <div class="custom-btn-container type-status"><button id="statusBtnDNF" class="btn-custom-action" onclick="handleStatusSet('DNF')">DNF</button></div>
+                    <div class="custom-btn-container type-status"><button id="statusBtnDNQ" class="btn-custom-action" disabled onclick="handleStatusSet('DNQ')">DNQ</button></div>
+                </div>
+
+                <div class="btn-group" style="margin-top:20px;">
+                    <button class="btn btn-save" id="saveBtn" onclick="saveRun()" disabled>Lauf Speichern</button>
+                </div>
+            </div>
+
+            <!-- TAB: Gruppenlauf -->
+            <div id="tabGroupContent" class="tab-content">
+                <div class="form-group" id="groupSetupForm">
+                    <label id="lblGroupRunnerAdd" for="groupRunnerInput">Läufer zur Gruppe hinzufügen:</label>
+                    <div class="input-inline-group">
+                        <input type="text" id="groupRunnerInput" placeholder="Name eingeben...">
+                        <button id="lblGroupAddBtn" class="btn btn-start" style="padding: 0 20px;" onclick="addRunnerToGroup()">Hinzufügen</button>
+                    </div>
+                </div>
+                <div id="groupMassActionRow" style="display: none; margin-bottom: 15px;">
+                    <button class="btn btn-start" id="groupMassStartBtn" style="width: 100%;" onclick="startAllGroupRunners()">🏁 Alle Starten</button>
+                </div>
+                <div id="groupRunnersContainer" class="group-runners-list"></div>
+            </div>
+            
+            <div class="btn-group" style="margin-top:20px;">
+                <button id="lblScreenPopupBtn" class="btn btn-popup-view" onclick="openScreenPopup()">📺 Leinwand-Ansicht öffnen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer mit Versionsnummer und Changelog-Link -->
+    <footer class="app-footer">
+        <span id="appFooter">Version: Lädt...</span>
+        <a id="lblChangelogLink" class="changelog-link" onclick="openChangelogModal()">Changelog</a>
+    </footer>
+
+    <!-- Modals -->
+    <div id="customModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="modalTitle" style="margin-top:0;">Neuen Button anlegen</h3>
+            <div class="form-group">
+                <label id="lblNewBtnName" for="newBtnName">Bezeichnung / Name:</label>
+                <input type="text" id="newBtnName" placeholder="z.B. Torfehler">
+            </div>
+            <div class="form-group">
+                <label id="lblNewBtnSeconds" for="newBtnSeconds">Zeit (in Sekunden):</label>
+                <input type="number" id="newBtnSeconds" placeholder="z.B. 5" min="1">
+            </div>
+            <div class="modal-actions">
+                <button id="lblModalCancel" class="btn" style="background-color: var(--text-light);" onclick="closeModal()">Abbrechen</button>
+                <button id="lblModalCreate" class="btn" style="background-color: var(--success);" onclick="createNewButton()">Erstellen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="eventModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="lblEventModalTitle" style="margin-top:0;">Neuen Lauf (Event) anlegen</h3>
+            <div class="form-group">
+                <label id="lblNewEventName" for="newEventName">Name des Events:</label>
+                <input type="text" id="newEventName" placeholder="z.B. Sommerlauf 2026">
+            </div>
+            <div class="modal-actions">
+                <button id="lblEventModalCancel" class="btn" style="background-color: var(--text-light);" onclick="closeEventModal()">Abbrechen</button>
+                <button id="lblEventModalCreate" class="btn" style="background-color: var(--success);" onclick="createNewEvent()">Anlegen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Changelog Fenster -->
+    <div id="changelogModal" class="custom-modal" onclick="closeChangelogModalOnOutsideClick(event)">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color: var(--primary);">📋 Changelog</h3>
+            <div class="form-group">
+                <pre id="changelogContent" class="changelog-pre">Lädt Changelog...</pre>
+            </div>
+            <div class="modal-actions">
+                <button id="lblChangelogClose" class="btn" style="background-color: var(--accent);" onclick="closeChangelogModal()">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="lblEditModalTitle" style="margin-top:0;">Eintrag bearbeiten</h3>
+            <input type="hidden" id="editRunId">
+            <div class="form-group">
+                <label id="lblEditRunnerName" for="editRunnerName">Name des Läufers:</label>
+                <input type="text" id="editRunnerName">
+            </div>
+            <div class="form-group">
+                <label id="lblEditStatus" for="editStatus">Status:</label>
+                <select id="editStatus" onchange="toggleEditTimeField()">
+                    <option value="REGULÄR">Regulär</option>
+                    <option value="DNQ">DNQ</option>
+                    <option value="DNF">DNF</option>
+                    <option value="DNS">DNS</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="editTimeGroup">
+                <label id="lblEditDuration">Reine Laufzeit:</label>
+                <div class="time-inputs-row">
+                    <div class="time-input-container"><input type="number" id="editHours" min="0"><span style="font-size:0.7rem">Std</span></div>
+                    <div class="time-input-container"><input type="number" id="editMinutes" min="0"><span style="font-size:0.7rem">Min</span></div>
+                    <div class="time-input-container"><input type="number" id="editSeconds" min="0"><span style="font-size:0.7rem">Sek</span></div>
+                    <div class="time-input-container"><input type="number" id="editHundredths" min="0"><span style="font-size:0.7rem">1/100</span></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label id="lblEditPenaltyCount" for="editPenaltyCount">Anzahl Strafen:</label>
+                <input type="number" id="editPenaltyCount" min="0">
+            </div>
+            <div class="form-group">
+                <label id="lblEditPenaltyTime" for="editPenaltyTime">Strafzeit Gesamt (Sekunden):</label>
+                <input type="number" id="editPenaltyTime" min="0">
+            </div>
+            <div class="form-group">
+                <label id="lblEditBonusCount" for="editBonusCount">Anzahl Boni:</label>
+                <input type="number" id="editBonusCount" min="0">
+            </div>
+            <div class="form-group">
+                <label id="lblEditBonusTime" for="editBonusTime">Bonuszeit Gesamt (Sekunden):</label>
+                <input type="number" id="editBonusTime" min="0">
+            </div>
+
+            <div class="modal-actions">
+                <button id="lblEditModalCancel" class="btn" style="background-color: var(--text-light);" onclick="closeEditModal()">Abbrechen</button>
+                <button id="lblEditModalSave" class="btn" style="background-color: var(--accent);" onclick="submitEditRun()">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false, isPaused = false;
+        let startTime = 0, elapsedBeforePause = 0, timerInterval = null, currentTotalMs = 0;
+        let penaltyCount = 0, penaltyTime = 0, bonusCount = 0, bonusTime = 0, currentStatus = "REGULÄR";
+        let currentModalMode = 'add_btn_penalty', popupWindow = null;
+        
+        let currentEvent = 'Standardlauf'; let eventList = ['Standardlauf']; let runs = []; let lockedEvents = []; let activeTab = 'single';
+        let groupRunners = []; let groupInterval = null;
+        let currentLanguage = 'de';
+        let whitelabelUrl = '';
+
+        let penaltyTypes = JSON.parse(localStorage.getItem('runnerPenaltyTypes')) || [];
+        let bonusTypes = JSON.parse(localStorage.getItem('runnerBonusTypes')) || [];
+
+        const translations = {
+            de: {
+                lblLeaderboardTitle: "🏆 Bestenliste",
+                lblExportDropdown: "📤 Export",
+                lblPdfSave: "PDF speichern",
+                lblImageShare: "Bild teilen/speichern",
+                lblLinkExport: "Link kopieren",
+                lblDataDropdown: "💾 Daten",
+                lblJsonExport: "Export (JSON)",
+                lblJsonImport: "Import (JSON)",
+                lblHeaderPos: "Pos.",
+                lblHeaderName: "Name",
+                lblHeaderTime: "Zeit",
+                tabSingleBtn: "👤 Einzelläufer",
+                tabGroupBtn: "👥 Gruppenlauf",
+                lblRunnerName: "Name des Läufers:",
+                lblPenaltySection: "Strafsekunden hinzufügen (+):",
+                lblBonusSection: "Bonuszeit abziehen (-):",
+                lblSpecialStatusSection: "Spezial-Status setzen:",
+                lblGroupRunnerAdd: "Läufer zur Gruppe hinzufügen:",
+                lblGroupAddBtn: "Hinzufügen",
+                groupRunnerInputPlaceholder: "Name eingeben...",
+                runnerNamePlaceholder: "z.B. Max Mustermann",
+                lblScreenPopupBtn: "📺 Leinwand-Ansicht öffnen",
+                lblChangelogLink: "Changelog",
+                lblNewBtnName: "Bezeichnung / Name:",
+                lblNewBtnSeconds: "Zeit (in Sekunden):",
+                lblModalCancel: "Abbrechen",
+                lblModalCreate: "Erstellen",
+                lblEventModalTitle: "Neuen Lauf (Event) anlegen",
+                lblNewEventName: "Name des Events:",
+                lblEventModalCancel: "Abbrechen",
+                lblEventModalCreate: "Anlegen",
+                lblChangelogClose: "Schließen",
+                lblEditModalTitle: "Eintrag bearbeiten",
+                lblEditRunnerName: "Name des Läufers:",
+                lblEditStatus: "Status:",
+                lblEditDuration: "Reine Laufzeit:",
+                lblEditPenaltyCount: "Anzahl Strafen:",
+                lblEditPenaltyTime: "Strafzeit Gesamt (Sekunden):",
+                lblEditBonusCount: "Anzahl Boni:",
+                lblEditBonusTime: "Bonuszeit Gesamt (Sekunden):",
+                lblEditModalCancel: "Abbrechen",
+                lblEditModalSave: "Speichern",
+                lblStandardRun: "🏁 Standardlauf",
+                lblLobbyReady: "Bereit...",
+                lblLobbyLocked: "Gesperrt",
+                lblTimerBlocked: "GEBLOCKT",
+                lblSettingsText: "Optionen",
+                lblLanguage: "Sprache:",
+                lblCoffeeText: "☕ Kaffee spendieren"
+            },
+            en: {
+                lblLeaderboardTitle: "🏆 Leaderboard",
+                lblExportDropdown: "📤 Export",
+                lblPdfSave: "Save PDF",
+                lblImageShare: "Share/Save Image",
+                lblLinkExport: "Copy Link",
+                lblDataDropdown: "💾 Data",
+                lblJsonExport: "Export (JSON)",
+                lblJsonImport: "Import (JSON)",
+                lblHeaderPos: "Pos.",
+                lblHeaderName: "Name",
+                lblHeaderTime: "Time",
+                tabSingleBtn: "👤 Single Runner",
+                tabGroupBtn: "👥 Group Run",
+                lblRunnerName: "Runner Name:",
+                lblPenaltySection: "Add Penalties (+):",
+                lblBonusSection: "Subtract Bonus Time (-):",
+                lblSpecialStatusSection: "Set Special Status:",
+                lblGroupRunnerAdd: "Add Runner to Group:",
+                lblGroupAddBtn: "Add",
+                groupRunnerInputPlaceholder: "Enter name...",
+                runnerNamePlaceholder: "e.g. John Doe",
+                lblScreenPopupBtn: "📺 Open Screen View",
+                lblChangelogLink: "Changelog",
+                lblNewBtnName: "Description / Name:",
+                lblNewBtnSeconds: "Time (in seconds):",
+                lblModalCancel: "Cancel",
+                lblModalCreate: "Create",
+                lblEventModalTitle: "Create New Run (Event)",
+                lblNewEventName: "Event Name:",
+                lblEventModalCancel: "Cancel",
+                lblEventModalCreate: "Create",
+                lblChangelogClose: "Close",
+                lblEditModalTitle: "Edit Entry",
+                lblEditRunnerName: "Runner Name:",
+                lblEditStatus: "Status:",
+                lblEditDuration: "Pure Running Time:",
+                lblEditPenaltyCount: "Penalty Count:",
+                lblEditPenaltyTime: "Total Penalty Time (Seconds):",
+                lblEditBonusCount: "Bonus Count:",
+                lblEditBonusTime: "Total Bonus Time (Seconds):",
+                lblEditModalCancel: "Cancel",
+                lblEditModalSave: "Save",
+                lblStandardRun: "🏁 Standard Run",
+                lblLobbyReady: "Ready...",
+                lblLobbyLocked: "Locked",
+                lblTimerBlocked: "BLOCKED",
+                lblSettingsText: "Options",
+                lblLanguage: "Language:",
+                lblCoffeeText: "☕ Buy me a coffee"
+            }
+        };
+
+        // Alchemistische Kompressions-Helfer mittels nativer Browser-Streams (Deflate)
+        async function compressToBlobB64(str) {
+            const stream = new Blob([str]).stream();
+            const compressedStream = stream.pipeThrough(new CompressionStream("deflate"));
+            const response = new Response(compressedStream);
+            const blob = await response.blob();
+            const buffer = await blob.arrayBuffer();
+            return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        async function decompressFromBlobB64(b64) {
+            let base64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+            while (base64.length % 4) base64 += '=';
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            const stream = new Blob([bytes]).stream();
+            const decompressedStream = stream.pipeThrough(new DecompressionStream("deflate"));
+            const response = new Response(decompressedStream);
+            const blob = await response.blob();
+            return await blob.text();
+        }
+
+        // CSV-Serializer für URL-Parameter
+        function runsToUrlParam(runsArray) {
+            const isLocked = lockedEvents.includes(currentEvent);
+            const metadata = `${currentEvent}|${isLocked}`;
+            
+            const serializedRuns = runsArray.map(r => {
+                const nameEscaped = r.name.replace(/[,;|]/g, ' '); 
+                const pCount = r.penalties ? r.penalties.count : 0;
+                const pTime = r.penalties ? r.penalties.time : 0;
+                const bCount = r.bonuses ? r.bonuses.count : 0;
+                const bTime = r.bonuses ? r.bonuses.time : 0;
+                return `${r.id},${nameEscaped},${r.status},${r.timeMs},${pCount},${pTime},${bCount},${bTime}`;
+            }).join(';');
+            
+            return `${metadata}|${serializedRuns}`;
+        }
+
+        // CSV-Deserializer für URL-Parameter
+        function urlParamToRuns(decodedString) {
+            if (!decodedString.trim()) return null;
+            
+            const parts = decodedString.split('|');
+            let eventName = "Standardlauf";
+            let isLocked = false;
+            let runsString = "";
+            
+            if (parts.length >= 3) {
+                eventName = parts[0];
+                isLocked = parts[1] === "true";
+                runsString = parts.slice(2).join('|'); 
+            } else {
+                runsString = decodedString; 
+            }
+            
+            if (!runsString.trim()) {
+                return { eventName, isLocked, runs: [] };
+            }
+            
+            const rows = runsString.split(';');
+            const importedRuns = rows.map(row => {
+                const cols = row.split(',');
+                if (cols.length < 8) throw new Error("Zeilenformat unvollständig.");
+                
+                const id = parseFloat(cols[0]);
+                const name = cols[1];
+                const status = cols[2];
+                const timeMs = parseInt(cols[3], 10);
+                const pCount = parseInt(cols[4], 10);
+                const pTime = parseInt(cols[5], 10);
+                const bCount = parseInt(cols[6], 10);
+                const bTime = parseInt(cols[7], 10);
+
+                const timeStr = (status === "DNF" || status === "DNS") ? status : formatTime(timeMs);
+
+                return {
+                    id: id,
+                    name: name,
+                    status: status,
+                    timeMs: timeMs,
+                    timeString: timeStr,
+                    penalties: { count: pCount, time: pTime },
+                    bonuses: { count: bCount, time: bTime }
+                };
+            });
+
+            return { eventName, isLocked, runs: importedRuns };
+        }
+
+        window.onload = function() {
+            eventList = JSON.parse(localStorage.getItem('runnerEventList')) || ['Standardlauf'];
+            currentEvent = localStorage.getItem('runnerCurrentEventName') || 'Standardlauf';
+            lockedEvents = JSON.parse(localStorage.getItem('runnerLockedEvents')) || [];
+            currentLanguage = localStorage.getItem('runnerLanguage') || 'de';
+            
+            buildEventSelectMenu(); loadRunsForCurrentEvent(); renderCustomButtons('penalty'); renderCustomButtons('bonus'); initTheme(); resetForm(); loadVersionInfo(); loadWhitelabelInfo();
+            setLanguage(currentLanguage);
+            checkUrlImport();
+        };
+
+        window.onunload = function() { if (popupWindow) popupWindow.close(); };
+
+        function loadWhitelabelInfo() {
+            fetch('whitelabel.info').then(response => { if (!response.ok) throw new Error(); return response.text(); }).then(text => {
+                const lines = text.split('\n'); 
+                let title = "⏱️ Zeitmessung"; 
+                let url = "";
+                let coffeeUrl = "";
+                
+                lines.forEach(line => { 
+                    const tl = line.trim(); 
+                    if (tl.startsWith('Title=')) {
+                        title = tl.replace('Title=', '').trim(); 
+                    } else if (tl.startsWith('URL=')) {
+                        url = tl.replace('URL=', '').trim(); 
+                    } else if (tl.startsWith('coffee=')) {
+                        coffeeUrl = tl.replace('coffee=', '').trim();
+                    }
+                });
+                
+                const el = document.getElementById('whitelabelTitle'); 
+                el.innerText = title; 
+                whitelabelUrl = url;
+                if (url) { 
+                    el.setAttribute('href', url); 
+                    el.setAttribute('target', '_blank'); 
+                } else {
+                    el.removeAttribute('href'); 
+                }
+
+                const coffeeEl = document.getElementById('coffeeLink');
+                if (coffeeUrl) {
+                    coffeeEl.setAttribute('href', coffeeUrl);
+                    coffeeEl.style.display = 'block'; 
+                } else {
+                    coffeeEl.style.display = 'none'; 
+                }
+            }).catch(() => { 
+                const el = document.getElementById('whitelabelTitle'); 
+                el.innerText = "⏱️ Zeitmessung"; 
+                el.removeAttribute('href'); 
+                document.getElementById('coffeeLink').style.display = 'none';
+            });
+        }
+
+        function loadVersionInfo() { fetch('ver.info').then(res => res.text()).then(v => { document.getElementById('appFooter').innerText = `Version: ${v.trim()}`; }).catch(() => { document.getElementById('appFooter').innerText = 'Version: Lokal / Unbekannt'; }); }
+        
+        function openChangelogModal() {
+            const contentEl = document.getElementById('changelogContent');
+            contentEl.innerText = currentLanguage === 'en' ? "Loading Changelog..." : "Changelog wird geladen...";
+            document.getElementById('changelogModal').style.display = 'flex';
+            
+            fetch('Changelog.info')
+                .then(res => { if (!res.ok) throw new Error(); return res.text(); })
+                .then(text => { contentEl.innerText = text.trim(); })
+                .catch(() => { contentEl.innerText = currentLanguage === 'en' ? "Error loading Changelog (Changelog.info not found)." : "Fehler beim Laden des Changelogs (Changelog.info nicht gefunden)."; });
+        }
+        function closeChangelogModal() { document.getElementById('changelogModal').style.display = 'none'; }
+        function closeChangelogModalOnOutsideClick(e) { if(e.target.id === 'changelogModal') closeChangelogModal(); }
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('runnerLanguage', lang);
+            
+            document.getElementById('langBtnDe').classList.toggle('active', lang === 'de');
+            document.getElementById('langBtnEn').classList.toggle('active', lang === 'en');
+            
+            const dictionary = translations[lang];
+            for (const key in dictionary) {
+                const el = document.getElementById(key);
+                if (el) {
+                    el.innerText = dictionary[key];
+                }
+            }
+            
+            const runnerInput = document.getElementById('runnerName');
+            if (runnerInput) runnerInput.placeholder = dictionary.runnerNamePlaceholder;
+            
+            const groupInput = document.getElementById('groupRunnerInput');
+            if (groupInput) groupInput.placeholder = dictionary.groupRunnerInputPlaceholder;
+
+            buildEventSelectMenu();
+            syncPopupRunnerName();
+            syncPopupNotice();
+            sortAndDisplayRuns();
+        }
+
+        function getCleanDisplayName(name) { return name.replace(/^\[.*?\]/, '').trim(); }
+        function isEmoji(str) { return /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g.test(str); }
+
+        function countryCodeToEmoji(code) {
+            const c = code.toUpperCase();
+            if (c.length === 2) {
+                return String.fromCodePoint(...[...c].map(char => 127397 + char.charCodeAt(0)));
+            }
+            return '🏃';
+        }
+
+        function processImportedPayload(targetEventName, targetIsLocked, importedRuns) {
+            let selectedEvent = currentEvent;
+            
+            if (!eventList.includes(targetEventName)) {
+                eventList.push(targetEventName);
+                localStorage.setItem('runnerEventList', JSON.stringify(eventList));
+                
+                if (targetIsLocked && !lockedEvents.includes(targetEventName)) {
+                    lockedEvents.push(targetEventName);
+                    localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents));
+                } else if (!targetIsLocked && lockedEvents.includes(targetEventName)) {
+                    lockedEvents = lockedEvents.filter(e => e !== targetEventName);
+                    localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents));
+                }
+                
+                currentEvent = targetEventName;
+                localStorage.setItem('runnerCurrentEventName', currentEvent);
+                runs = importedRuns;
+                saveRunsForCurrentEvent();
+                
+                buildEventSelectMenu();
+                sortAndDisplayRuns();
+                resetForm();
+                
+                alert(currentLanguage === 'en' 
+                    ? `Successfully imported and created new event "${targetEventName}"!` 
+                    : `Lauf "${targetEventName}" wurde erfolgreich neu angelegt und importiert!`);
+            } else {
+                if (confirm(currentLanguage === 'en' 
+                    ? `The event "${targetEventName}" already exists. Overwrite with imported runs?` 
+                    : `Der Lauf "${targetEventName}" existiert bereits. Sollen die existierenden Läufe mit den importierten Daten überschrieben werden?`)) {
+                    
+                    if (targetIsLocked && !lockedEvents.includes(targetEventName)) {
+                        lockedEvents.push(targetEventName);
+                    } else if (!targetIsLocked && lockedEvents.includes(targetEventName)) {
+                        lockedEvents = lockedEvents.filter(e => e !== targetEventName);
+                    }
+                    localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents));
+                    
+                    currentEvent = targetEventName;
+                    localStorage.setItem('runnerCurrentEventName', currentEvent);
+                    runs = importedRuns;
+                    saveRunsForCurrentEvent();
+                    
+                    buildEventSelectMenu();
+                    sortAndDisplayRuns();
+                    resetForm();
+                }
+            }
+        }
+
+        function getFaviconUrl(domain) {
+            return `https://www.google.com/s2/favicons?domain=${domain}`;
+        }
+
+        function getRunnerIconHTML(name, isExportMode = false) {
+            const match = name.match(/^\[(.*?)\]/);
+            if (match) {
+                const content = match[1].trim();
+                const domainRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+                if (domainRegex.test(content)) {
+                    if (isExportMode) return `<span class="runner-icon">🌐</span>`;
+                    let cleanDomain = content.replace(/^(https?:\/\/)?(www\.)?/, '');
+                    return `<span class="runner-icon"><img src="${getFaviconUrl(cleanDomain)}" alt="favicon" onerror="this.onerror=null; this.parentElement.innerHTML='🌐';"></span>`;
+                }
+                if (content.length === 2 || content.length === 3) {
+                    if (!isEmoji(content)) {
+                        return `<span class="runner-icon">${countryCodeToEmoji(content)}</span>`;
+                    }
+                }
+                if (isEmoji(content)) return `<span class="runner-icon">${content}</span>`;
+            }
+            return `<span class="runner-icon">🏃</span>`;
+        }
+
+        function switchTab(mode) {
+            if (isRunning || groupRunners.some(r => r.state === 'running' || r.state === 'paused')) { alert(currentLanguage === 'en' ? "Tab switching locked during active timing!" : "Wechsel während aktiver Messung blockiert!"); return; }
+            activeTab = mode;
+            document.getElementById('tabSingleBtn').classList.toggle('active', mode === 'single');
+            document.getElementById('tabGroupBtn').classList.toggle('active', mode === 'group');
+            document.getElementById('tabSingleContent').classList.toggle('active', mode === 'single');
+            document.getElementById('tabGroupContent').classList.toggle('active', mode === 'group');
+            if(popupWindow && !popupWindow.closed) { syncPopupRunnerName(); syncPopupNotice(); }
+        }
+
+        // --- Gruppenlauf ---
+        function addRunnerToGroup() {
+            const input = document.getElementById('groupRunnerInput'); const name = input.value.trim(); 
+            if(!name) { alert(currentLanguage === 'en' ? "Please enter a name for the group runner." : "Bitte einen Namen für den Gruppenläufer eingeben."); return; }
+            groupRunners.push({ id: Date.now() + Math.random(), name: name, state: 'idle', timeMs: 0, startTime: 0, elapsed: 0, status: 'REGULÄR', penalties: { count: 0, time: 0 }, bonuses: { count: 0, time: 0 } });
+            input.value = ''; renderGroupRunners(); document.getElementById('groupMassActionRow').style.display = 'block';
+        }
+
+        function startAllGroupRunners() {
+            if(groupRunners.length === 0) return; const now = Date.now();
+            groupRunners.forEach(r => { if(r.state === 'idle') { r.state = 'running'; r.startTime = now; } });
+            document.getElementById('groupSetupForm').style.display = 'none'; document.getElementById('groupMassActionRow').style.display = 'none';
+            startGroupTicker(); renderGroupRunners();
+        }
+
+        // --- Asynchrone Link-Export & Import Logik (V2) ---
+        async function exportToLink() {
+            if (runs.length === 0) {
+                alert(currentLanguage === 'en' ? "No runs to export." : "Keine Läufe zum Exportieren.");
+                return;
+            }
+            try {
+                const rawCsv = runsToUrlParam(runs);
+                const compressedData = await compressToBlobB64(rawCsv);
+                const finalParam = "v2~" + compressedData;
+                
+                const baseUrl = whitelabelUrl || (window.location.origin + window.location.pathname);
+                const shareUrl = `${baseUrl}?import=${encodeURIComponent(finalParam)}`;
+                
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    alert(currentLanguage === 'en' ? "Short link copied to clipboard!" : "Kurzer Link erfolgreich in die Zwischenablage kopiert!");
+                }).catch(() => {
+                    prompt(currentLanguage === 'en' ? "Copy this link:" : "Kopiere diesen Link:", shareUrl);
+                });
+            } catch (e) {
+                console.error(e);
+                alert(currentLanguage === 'en' ? "Error generating compressed link." : "Fehler beim Erstellen des komprimierten Links.");
+            }
+        }
+
+        async function checkUrlImport() {
+            const params = new URLSearchParams(window.location.search);
+            let importData = params.get('import');
+            if (importData) {
+                try {
+                    let importedPayload = null;
+                    let decodedCsvString = "";
+
+                    if (importData.startsWith('v2~')) {
+                        const base64Data = importData.substring(3);
+                        decodedCsvString = await decompressFromBlobB64(base64Data);
+                        importedPayload = urlParamToRuns(decodedCsvString);
+                    } else if (importData.startsWith('W3siaWQi') || (importData.includes('%') === false && importData.includes(',') === false)) {
+                        const repairedBase64 = importData.replace(/ /g, '+').replace(/-/g, '+').replace(/_/g, '/');
+                        const binString = atob(repairedBase64);
+                        const bytes = new Uint8Array(binString.length);
+                        for (let i = 0; i < binString.length; i++) {
+                            bytes[i] = binString.charCodeAt(i);
+                        }
+                        const finalStr = new TextDecoder().decode(bytes);
+                        const importedRuns = JSON.parse(finalStr);
+                        importedPayload = { eventName: "Standardlauf", isLocked: false, runs: importedRuns };
+                    } else {
+                        decodedCsvString = decodeURIComponent(importData);
+                        importedPayload = urlParamToRuns(decodedCsvString);
+                    }
+
+                    if (importedPayload && Array.isArray(importedPayload.runs)) {
+                        setTimeout(() => {
+                            processImportedPayload(importedPayload.eventName, importedPayload.isLocked, importedPayload.runs);
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }, 500);
+                    } else {
+                        throw new Error("Daten-Struktur unvollständig.");
+                    }
+                } catch (e) {
+                    console.error("Link-Import-Fehler:", e);
+                    alert(currentLanguage === 'en' 
+                        ? `Failed to parse imported link data: ${e.message}` 
+                        : `Fehler beim Verarbeiten der importierten Link-Daten: ${e.message}`);
+                }
+            }
+        }
+
+        function importJSONData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    let targetEventName = currentEvent;
+                    let targetIsLocked = lockedEvents.includes(currentEvent);
+                    let targetRuns = [];
+
+                    if (data && typeof data === 'object' && !Array.isArray(data)) {
+                        targetEventName = data.eventName || currentEvent;
+                        targetIsLocked = data.isLocked === true;
+                        targetRuns = data.runs || [];
+                    } else if (Array.isArray(data)) {
+                        targetRuns = data;
+                    } else {
+                        throw new Error("Ungültiges Dateiformat.");
+                    }
+
+                    if (Array.isArray(targetRuns)) {
+                        processImportedPayload(targetEventName, targetIsLocked, targetRuns);
+                    } else {
+                        throw new Error("Die JSON-Datei enthält kein gültiges Array von Läufern.");
+                    }
+                } catch (err) {
+                    console.error("JSON-Import-Fehler:", err);
+                    alert(currentLanguage === 'en' 
+                        ? `Failed to load the imported file. Reason: ${err.message}` 
+                        : `Fehler beim Laden der importierten Datei. Ursache: ${err.message}`);
+                }
+                document.getElementById('jsonImportInput').value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function startGroupTicker() {
+            if(groupInterval) clearInterval(groupInterval);
+            groupInterval = setInterval(() => {
+                const now = Date.now(); groupRunners.forEach(r => { if(r.state === 'running') { r.timeMs = now - r.startTime + r.elapsed; } });
+                updateGroupLiveDisplays();
+            }, 10);
+        }
+
+        function updateGroupLiveDisplays() {
+            groupRunners.forEach(r => { const el = document.getElementById(`gDisplay_${r.id}`); if(el) el.innerText = r.status === 'DNF' || r.status === 'DNS' ? r.status : formatTime(r.timeMs); });
+            if (popupWindow && !popupWindow.closed) syncPopupLeaderboard();
+        }
+
+        function toggleGroupRunnerTimer(id) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r || r.state === 'stopped') return;
+            if(r.state === 'running') { r.state = 'paused'; r.elapsed = r.timeMs; } else { r.state = 'running'; r.startTime = Date.now(); }
+            renderGroupRunners();
+        }
+
+        function stopGroupRunnerTimer(id) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r) return;
+            r.state = 'stopped'; renderGroupRunners();
+            if(groupRunners.every(runner => runner.state === 'stopped')) clearInterval(groupInterval);
+        }
+
+        // --- Zeitkorrektur ---
+        function adjustGroupTime(id, mode, secs) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r || r.status === 'DNF' || r.status === 'DNS') return;
+            if(mode === 'penalty') { r.penalties.count++; r.penalties.time += secs; r.timeMs += (secs * 1000); r.elapsed += (secs * 1000); if(r.state === 'running') r.startTime -= (secs * 1000); } 
+            else { r.bonuses.count++; r.bonuses.time += secs; r.timeMs -= (secs * 1000); r.elapsed -= (secs * 1000); if(r.state === 'running') r.startTime += (secs * 1000); }
+            if(r.timeMs < 0) { r.timeMs = 0; r.elapsed = 0; if(r.state === 'running') r.startTime = Date.now(); }
+            renderGroupRunners();
+        }
+
+        function setGroupStatus(id, stat) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r) return;
+            r.status = stat;
+            if(stat === 'DNS' || stat === 'DNF' || stat === 'DNQ') { r.state = 'stopped'; if (stat === 'DNS' || stat === 'DNF') { r.timeMs = 0; r.elapsed = 0; r.penalties = {count:0,time:0}; r.bonuses = {count:0,time:0}; } }
+            renderGroupRunners();
+        }
+
+        function saveGroupRunner(id) {
+            const r = groupRunners.find(runner => runner.id === id); if(!r) return;
+            runs.push({ id: Date.now() + Math.random(), name: r.name, timeMs: r.timeMs, timeString: (r.status === "DNF" || r.status === "DNS") ? r.status : formatTime(r.timeMs), status: r.status, penalties: r.penalties, bonuses: r.bonuses });
+            saveRunsForCurrentEvent(); sortAndDisplayRuns(); groupRunners = groupRunners.filter(runner => runner.id !== id); renderGroupRunners();
+            if(groupRunners.length === 0) { document.getElementById('groupSetupForm').style.display = 'block'; resetForm(); }
+        }
+
+        function renderGroupRunners() {
+            const container = document.getElementById('groupRunnersContainer'); container.innerHTML = '';
+            groupRunners.forEach(r => {
+                const div = document.createElement('div'); div.className = 'group-runner-row';
+                let controls = '';
+                if(r.state === 'idle') controls = `<div class="group-mini-btn-row"><button class="btn group-mini-btn" style="background-color: var(--status-color);" onclick="setGroupStatus(${r.id}, 'DNS')">DNS</button><button class="btn group-mini-btn" style="background-color: var(--danger);" onclick="setGroupStatus(${r.id}, 'DNF')">DNF</button><button class="btn group-mini-btn" style="background-color: #7f8c8d;" onclick="setGroupStatus(${r.id}, 'DNQ')">DNQ</button></div>`;
+                else if(r.state === 'running' || r.state === 'paused') controls = `<div class="group-mini-btn-row"><button class="btn group-mini-btn ${r.state === 'running' ? 'btn-pause' : 'btn-start'}" onclick="toggleGroupRunnerTimer(${r.id})">${r.state === 'running' ? 'Pause' : 'Weiter'}</button><button class="btn btn-stop group-mini-btn" onclick="stopGroupRunnerTimer(${r.id})">Stop</button></div>`;
+                else if(r.state === 'stopped') {
+                    let mod = '';
+                    if(r.status === 'REGULÄR') mod = `<div style="margin: 8px 0; display:flex; flex-wrap:wrap; gap:4px;">${penaltyTypes.map(p => `<button class="btn" style="background:var(--penalty); font-size:0.75rem; padding:4px 8px;" onclick="adjustGroupTime(${r.id}, 'penalty', ${p.seconds})">${p.name}</button>`).join('')}${bonusTypes.map(b => `<button class="btn" style="background:var(--bonus); font-size:0.75rem; padding:4px 8px;" onclick="adjustGroupTime(${r.id}, 'bonus', ${b.seconds})">${b.name}</button>`).join('')}</div><div style="font-size:0.85rem; font-weight:600; margin-bottom:6px; color:var(--penalty)">${currentLanguage === 'en' ? 'Penalties' : 'Strafen'}: +${r.penalties.time}s | ${currentLanguage === 'en' ? 'Bonuses' : 'Boni'}: -${r.bonuses.time}s</div>`;
+                    controls = `${mod}<div class="group-mini-btn-row"><button class="btn btn-start group-mini-btn" onclick="saveGroupRunner(${r.id})">💾 ${currentLanguage === 'en' ? 'Save' : 'Speichern'}</button>${r.status === 'REGULÄR' ? `<button class="btn group-mini-btn" style="background-color: var(--danger);" onclick="setGroupStatus(${r.id}, 'DNF')">DNF</button><button class="btn group-mini-btn" style="background-color: var(--status-color);" onclick="setGroupStatus(${r.id}, 'DNQ')">DNQ</button>` : ''}</div>`;
+                }
+                div.innerHTML = `<div class="group-runner-header"><span class="group-runner-name-label">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR' ? `[${r.status}]` : ''}</span><span class="group-time-display" id="gDisplay_${r.id}">${r.status === 'DNF' || r.status === 'DNS' ? r.status : formatTime(r.timeMs)}</span></div>${controls}`;
+                container.appendChild(div);
+            });
+            if (popupWindow && !popupWindow.closed) syncPopupLeaderboard();
+        }
+
+        // --- Events ---
+        function buildEventSelectMenu() {
+            const select = document.getElementById('eventSelect'); select.innerHTML = '';
+            eventList.forEach(ev => { const opt = document.createElement('option'); opt.value = ev; opt.innerText = (lockedEvents.includes(ev) ? '🔒 ' : '') + (ev === 'Standardlauf' ? translations[currentLanguage].lblStandardRun : '🏆 ' + ev); if (ev === currentEvent) opt.selected = true; select.appendChild(opt); });
+            updateLockBtnStyle();
+        }
+        function openEventCreationModal() { document.getElementById('eventModal').style.display = 'flex'; document.getElementById('newEventName').focus(); }
+        function closeEventModal() { document.getElementById('eventModal').style.display = 'none'; document.getElementById('newEventName').value = ''; }
+        function createNewEvent() { const name = document.getElementById('newEventName').value.trim(); if (!name) { alert(currentLanguage === 'en' ? "Please enter an event name." : "Bitte einen Eventnamen eingeben."); return; } if (eventList.includes(name)) { alert(currentLanguage === 'en' ? "This event already exists." : "Dieses Event existiert bereits."); return; } eventList.push(name); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); currentEvent = name; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); closeEventModal(); }
+        function handleEventSelectChange() { currentEvent = document.getElementById('eventSelect').value; localStorage.setItem('runnerCurrentEventName', currentEvent); loadRunsForCurrentEvent(); resetForm(); updateLockBtnStyle(); }
+        function deleteCurrentEvent() { if (currentEvent === 'Standardlauf') { alert(currentLanguage === 'en' ? "The Standard Run cannot be deleted." : "Der Standardlauf kann nicht gelöscht werden."); return; } if (!confirm(currentLanguage === 'en' ? `Irrevocably delete event "${currentEvent}"?` : `Event "${currentEvent}" unwiderruflich löschen?`)) return; localStorage.removeItem(`runnerLeaderboard_${currentEvent}`); eventList = eventList.filter(e => e !== currentEvent); lockedEvents = lockedEvents.filter(e => e !== currentEvent); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); currentEvent = 'Standardlauf'; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); resetForm(); }
+        function toggleLockCurrentEvent() { if (isRunning || groupRunners.length > 0) { alert(currentLanguage === 'en' ? "Switching locked during active timing." : "Wechsel blockiert während laufender Messungen."); return; } if(lockedEvents.includes(currentEvent)) lockedEvents = lockedEvents.filter(e => e !== currentEvent); else lockedEvents.push(currentEvent); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); buildEventSelectMenu(); resetForm(); }
+        function updateLockBtnStyle() { const btn = document.getElementById('lockEventBtn'); const isLocked = lockedEvents.includes(currentEvent); btn.innerText = isLocked ? "🔓" : "🔒"; btn.className = isLocked ? "btn-event-action btn-lock-event is-locked" : "btn-event-action btn-lock-event"; }
+        function loadRunsForCurrentEvent() { runs = JSON.parse(localStorage.getItem(`runnerLeaderboard_${currentEvent}`)) || []; sortAndDisplayRuns(); }
+        function saveRunsForCurrentEvent() { localStorage.setItem(`runnerLeaderboard_${currentEvent}`, JSON.stringify(runs)); }
+
+        // --- Theme & Custom Buttons ---
+        function initTheme() { const saved = localStorage.getItem('theme') || 'light'; document.documentElement.setAttribute('data-theme', saved); document.getElementById('themeIcon').innerText = saved === 'dark' ? "☀️" : "🌙"; document.getElementById('themeText').innerText = saved === 'dark' ? "Light Mode" : "Dark Mode"; syncPopupTheme(); }
+        function toggleTheme() { const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', newTheme); localStorage.setItem('theme', newTheme); initTheme(); }
+        function openModal(mode) { if (lockedEvents.includes(currentEvent)) return; currentModalMode = mode; document.getElementById('modalTitle').innerText = mode === 'add_btn_penalty' ? (currentLanguage === 'en' ? "Create New Penalty Button (+)" : "Neuen Straf-Button anlegen (+)") : (currentLanguage === 'en' ? "Create New Bonus Button (-)" : "Neuen Bonus-Button anlegen (-)"); document.getElementById('customModal').style.display = 'flex'; document.getElementById('newBtnName').focus(); }
+        function closeModal() { document.getElementById('customModal').style.display = 'none'; document.getElementById('newBtnName').value = ''; document.getElementById('newBtnSeconds').value = ''; }
+        function createNewButton() { const name = document.getElementById('newBtnName').value.trim(), secs = parseInt(document.getElementById('newBtnSeconds').value, 10); if (!name) { alert(currentLanguage === 'en' ? "Please enter a label." : "Bitte eine Bezeichnung eingeben."); return; } if (isNaN(secs) || secs <= 0) { alert(currentLanguage === 'en' ? "Please enter a valid amount of seconds." : "Bitte eine gültige Sekundenzahl eingeben."); return; } if (currentModalMode === 'add_btn_penalty') { penaltyTypes.push({id: Date.now(), name: `${name} (+${secs}s)`, seconds: secs}); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes.push({id: Date.now(), name: `${name} (-${secs}s)`, seconds: secs}); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } closeModal(); renderGroupRunners(); }
+        function deleteCustomType(id, mode, e) { e.stopPropagation(); if (mode === 'penalty') { penaltyTypes = penaltyTypes.filter(p => p.id !== id); localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes)); renderCustomButtons('penalty'); } else { bonusTypes = bonusTypes.filter(b => b.id !== id); localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes)); renderCustomButtons('bonus'); } renderGroupRunners(); }
+        function renderCustomButtons(mode) { const container = document.getElementById(mode === 'penalty' ? 'dynamicPenaltyGroup' : 'dynamicBonusGroup'); container.innerHTML = ''; const target = mode === 'penalty' ? penaltyTypes : bonusTypes; const isSaveDisabled = document.getElementById('saveBtn').disabled || lockedEvents.includes(currentEvent); target.forEach(item => { const wrapper = document.createElement('div'); wrapper.className = `custom-btn-container type-${mode}`; wrapper.innerHTML = `<button class="btn-custom-action" ${isSaveDisabled?'disabled':''} onclick="handleTimeAdjustment('${mode}', ${item.seconds})">${item.name}</button><button class="delete-custom-type-btn" ${lockedEvents.includes(currentEvent)?'disabled':''} onclick="deleteCustomType(${item.id}, '${mode}', event)">&times;</button>`; container.appendChild(wrapper); }); }
+        function setActionButtonsDisabled(d) { const isLocked = lockedEvents.includes(currentEvent); document.querySelectorAll('#tabSingleContent .btn-custom-action').forEach(b => b.disabled = d || isLocked); document.getElementById('statusBtnDNQ').disabled = d || isLocked; }
+        function formatTime(ms) { if (ms < 0) ms = 0; let h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000), hh = Math.floor((ms % 1000) / 10); return (h<10?"0":"")+h+":"+(m<10?"0":"")+m+":"+(s<10?"0":"")+s+"."+(hh<10?"0":"")+hh; }
+
+        // --- Zeitmessung Logik (Einzel) ---
+        function toggleTimer() {
+            if (lockedEvents.includes(currentEvent)) return;
+            if (!document.getElementById('runnerName').value.trim()) { alert(currentLanguage === 'en' ? "Please enter a name for the runner." : "Bitte einen Namen für den Läufer eingeben."); return; }
+            const startBtn = document.getElementById('startBtn');
+            if (currentStatus !== "REGULÄR") { currentStatus = "REGULÄR"; document.getElementById('display').innerText = "00:00:00.00"; updateAdjustmentNoticeDisplay(); }
+            if (!isRunning) {
+                isRunning = true; startTime = Date.now() - elapsedBeforePause;
+                timerInterval = setInterval(() => { currentTotalMs = Date.now() - startTime; document.getElementById('display').innerText = formatTime(currentTotalMs); syncPopupTime(formatTime(currentTotalMs)); }, 10);
+                startBtn.innerText = "Pause"; startBtn.className = "btn btn-pause"; document.getElementById('stopBtn').disabled = false; document.getElementById('saveBtn').disabled = true; document.getElementById('runnerName').disabled = true; setActionButtonsDisabled(true);
+            } else { isRunning = false; isPaused = true; clearInterval(timerInterval); elapsedBeforePause = currentTotalMs; startBtn.innerText = currentLanguage === 'en' ? "Continue" : "Weiter"; startBtn.className = "btn btn-start"; }
+        }
+        function stopTimer() { isRunning = false; isPaused = false; clearInterval(timerInterval); document.getElementById('startBtn').disabled = true; document.getElementById('startBtn').innerText = "Start"; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = lockedEvents.includes(currentEvent); setActionButtonsDisabled(false); }
+        function handleTimeAdjustment(mode, secs) { if (currentStatus !== "REGULÄR") return; if (mode === 'penalty') { penaltyCount++; penaltyTime += secs; currentTotalMs += (secs*1000); elapsedBeforePause += (secs*1000); if(isRunning) startTime -= (secs*1000); } else { bonusCount++; bonusTime += secs; currentTotalMs -= (secs*1000); elapsedBeforePause -= (secs*1000); if(isRunning) startTime += (secs*1000); } if (currentTotalMs < 0) { currentTotalMs = 0; elapsedBeforePause = 0; if(isRunning) startTime = Date.now(); } document.getElementById('display').innerText = formatTime(currentTotalMs); syncPopupTime(formatTime(currentTotalMs)); updateAdjustmentNoticeDisplay(); }
+        function handleStatusSet(s) { if (lockedEvents.includes(currentEvent)) return; if (!document.getElementById('runnerName').value.trim()) { alert(currentLanguage === 'en' ? "Please enter a name for the runner." : "Bitte einen Namen für den Läufer eingeben."); return; } currentStatus = s; if (s !== "REGULÄR") { isRunning = false; clearInterval(timerInterval); if (s === "DNF" || s === "DNS") { currentTotalMs = 0; elapsedBeforePause = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; document.getElementById('display').innerText = "--:--:--.--"; syncPopupTime(s); } document.getElementById('startBtn').disabled = true; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = false; document.getElementById('runnerName').disabled = true; } updateAdjustmentNoticeDisplay(); }
+        function updateAdjustmentNoticeDisplay() { const n = document.getElementById('adjustmentNotice'); if (currentStatus !== "REGULÄR") { n.innerText = `Status: ${currentStatus}`; n.className = "adjustment-display status-info"; } else { let t = ""; if (penaltyTime > 0) t += `+${penaltyTime}s ${currentLanguage === 'en' ? 'Penalty' : 'Strafe'} `; if (bonusTime > 0) t += `-${bonusTime}s ${currentLanguage === 'en' ? 'Bonus' : 'Bonus'}`; n.innerText = t.trim(); n.className = `adjustment-display ${penaltyTime >= bonusTime ? 'penalty' : 'bonus'}`; } syncPopupNotice(); }
+        function saveRun() { if (lockedEvents.includes(currentEvent)) return; if(!document.getElementById('runnerName').value.trim()) { alert(currentLanguage === 'en' ? "No name specified." : "Kein Name hinterlegt."); return; } runs.push({ id: Date.now(), name: document.getElementById('runnerName').value.trim(), timeMs: currentTotalMs, timeString: (currentStatus === "DNF" || currentStatus === "DNS") ? currentStatus : formatTime(currentTotalMs), status: currentStatus, penalties: { count: penaltyCount, time: penaltyTime }, bonuses: { count: bonusCount, time: bonusTime } }); saveRunsForCurrentEvent(); sortAndDisplayRuns(); resetForm(); }
+        function resetForm() { isRunning = false; isPaused = false; clearInterval(timerInterval); elapsedBeforePause = 0; currentTotalMs = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; currentStatus = "REGULÄR"; const isLocked = lockedEvents.includes(currentEvent); document.getElementById('timingCard').style.display = isLocked ? 'none' : 'block'; document.getElementById('runnerName').value = ""; document.getElementById('runnerName').disabled = isLocked; document.getElementById('display').innerText = "00:00:00.00"; document.getElementById('adjustmentNotice').innerText = ""; document.getElementById('startBtn').disabled = isLocked; document.getElementById('startBtn').innerText = "Start"; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = true; document.getElementById('statusBtnDNS').disabled = isLocked; document.getElementById('statusBtnDNF').disabled = isLocked; document.getElementById('statusBtnDNQ').disabled = true; document.getElementById('addPenaltyTypeBtn').disabled = isLocked; document.getElementById('addBonusTypeBtn').disabled = isLocked; renderCustomButtons('penalty'); renderCustomButtons('bonus'); groupRunners = []; renderGroupRunners(); document.getElementById('groupSetupForm').style.display = 'block'; document.getElementById('groupMassActionRow').style.display = 'none'; syncPopupRunnerName(); syncPopupTime(isLocked ? translations[currentLanguage].lblTimerBlocked : "00:00:00.00"); syncPopupNotice(); }
+
+        // --- Bestenliste Renderer ---
+        function sortAndDisplayRuns(isExportMode = false) {
+            runs.sort((a, b) => { const ord = { "REGULÄR": 1, "DNQ": 2, "DNF": 3, "DNS": 4 }; if (ord[a.status] !== ord[b.status]) return ord[a.status] - ord[b.status]; if (a.status === "REGULÄR" || a.status === "DNQ") return a.timeMs - b.timeMs; return a.name.localeCompare(b.name); });
+            const ol = document.getElementById('leaderboard'); ol.innerHTML = "";
+            document.getElementById('leaderboardHeader').style.display = runs.length > 0 ? 'flex' : 'none';
+            if (runs.length === 0) { ol.innerHTML = `<li class="empty-state">${currentLanguage === 'en' ? 'No runs registered yet.' : 'Noch keine Läufe registriert.'}</li>`; if (popupWindow && !popupWindow.closed) syncPopupLeaderboard(); return; }
+            runs.forEach((run, index) => {
+                const li = document.createElement('li'); li.className = "leaderboard-item";
+                let b = ''; if (run.status !== "REGULÄR") b += `<span class="badge badge-status">${run.status}</span>`; if (run.penalties?.time > 0) b += `<span class="badge badge-penalty">${run.penalties.count}x ${currentLanguage === 'en' ? 'Penalty' : 'Strafe'} (+${run.penalties.time}s)</span>`; if (run.bonuses?.time > 0) b += `<span class="badge badge-bonus">${run.bonuses.count}x Bonus (-${run.bonuses.time}s)</span>`;
+                let actionButtonsHTML = isExportMode ? '' : `<button class="action-btn edit-btn" onclick="openEditModal(${run.id})">📝</button><button class="action-btn delete-btn" onclick="deleteRun(${run.id})">&times;</button>`;
+                
+                // Korrigiertes innerHTML: Strukturfehler (überflüssiges </div>) beseitigt und flex-Kombination optimiert
+                li.innerHTML = `<div class="runner-info"><span class="rank">#${index + 1}</span><div><div class="runner-name-container">${getRunnerIconHTML(run.name, isExportMode)}<span class="runner-name">${escapeHTML(getCleanDisplayName(run.name))}</span></div><div class="stats-badges">${b}</div></div></div><div class="right-side-container"><span class="runner-time">${run.timeString}</span>${actionButtonsHTML}</div>`;
+                ol.appendChild(li);
+            });
+            if (!isExportMode && popupWindow && !popupWindow.closed) syncPopupLeaderboard();
+        }
+        function deleteRun(id) { runs = runs.filter(r => r.id !== id); saveRunsForCurrentEvent(); sortAndDisplayRuns(); }
+
+        // --- Bearbeiten Modus ---
+        function openEditModal(id) {
+            const run = runs.find(r => r.id === id); if (!run) return;
+            document.getElementById('editRunId').value = run.id; document.getElementById('editRunnerName').value = run.name; document.getElementById('editStatus').value = run.status;
+            let totalMs = run.timeMs || 0;
+            document.getElementById('editHours').value = Math.floor(totalMs / 3600000); document.getElementById('editMinutes').value = Math.floor((totalMs % 3600000) / 60000); document.getElementById('editSeconds').value = Math.floor((totalMs % 60000) / 1000); document.getElementById('editHundredths').value = Math.floor((totalMs % 1000) / 10);
+            document.getElementById('editPenaltyCount').value = run.penalties ? run.penalties.count : 0; document.getElementById('editPenaltyTime').value = run.penalties ? run.penalties.time : 0;
+            document.getElementById('editBonusCount').value = run.bonuses ? run.bonuses.count : 0; document.getElementById('editBonusTime').value = run.bonuses ? run.bonuses.time : 0;
+            toggleEditTimeField(); document.getElementById('editModal').style.display = 'flex';
+        }
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+        function toggleEditTimeField() { document.getElementById('editTimeGroup').style.display = (document.getElementById('editStatus').value === "DNF" || document.getElementById('editStatus').value === "DNS") ? 'none' : 'flex'; }
+        function submitEditRun() {
+            const id = parseFloat(document.getElementById('editRunId').value); const index = runs.findIndex(r => r.id === id); if (index === -1) return;
+            const stat = document.getElementById('editStatus').value; let timeMs = 0;
+            let pCount = parseInt(document.getElementById('editPenaltyCount').value, 10) || 0; let pTime = parseInt(document.getElementById('editPenaltyTime').value, 10) || 0;
+            let bCount = parseInt(document.getElementById('editBonusCount').value, 10) || 0; let bTime = parseInt(document.getElementById('editBonusTime').value, 10) || 0;
+            if (stat !== "DNF" && stat !== "DNS") timeMs = (parseInt(document.getElementById('editHours').value, 10)||0)*3600000 + (parseInt(document.getElementById('editMinutes').value, 10)||0)*60000 + (parseInt(document.getElementById('editSeconds').value, 10)||0)*1000 + (parseInt(document.getElementById('editHundredths').value, 10)||0)*10;
+            else { pCount = 0; pTime = 0; bCount = 0; bTime = 0; }
+            runs[index] = { id: id, name: document.getElementById('editRunnerName').value.trim()||"Unbekannt", status: stat, timeMs: timeMs, timeString: (stat==="DNF"||stat==="DNS")?stat:formatTime(timeMs), penalties: { count: pCount, time: pTime }, bonuses: { count: bCount, time: bTime } };
+            saveRunsForCurrentEvent(); sortAndDisplayRuns(); closeEditModal();
+        }
+
+        // --- Daten Export ---
+        function exportJSONData() { 
+            if (runs.length === 0) return;
+            const isLocked = lockedEvents.includes(currentEvent);
+            const exportPayload = {
+                eventName: currentEvent,
+                isLocked: isLocked,
+                runs: runs
+            };
+            const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2)); 
+            const a = document.createElement('a'); 
+            a.setAttribute("href", data); 
+            a.setAttribute("download", `Bestenliste_${currentEvent.replace(/[^a-z0-9]/gi, '_')}.json`); 
+            document.body.appendChild(a); 
+            a.click(); 
+            a.remove(); 
+        }
+        
+        function triggerJSONImport() { if (!lockedEvents.includes(currentEvent)) document.getElementById('jsonImportInput').click(); }
+
+        // --- Popup Leinwand ---
+        function openScreenPopup() {
+            if (popupWindow && !popupWindow.closed) { popupWindow.focus(); return; }
+            popupWindow = window.open("", "LeinwandAnsicht", "width=1000,height=600,scrollbars=yes,resizable=yes");
+            popupWindow.document.write(`<!DOCTYPE html><html><head><title>Live-Anzeige</title><style>:root { --bg-color: #f4f7f6; --card-bg: #ffffff; --primary: #2c3e50; --accent: #3498db; --danger: #e74c3c; --success: #2ecc71; --text: #333333; --border-color: #dddddd; --penalty: #f39c12; --bonus: #9b59b6; --status: #7f8c8d; } [data-theme="dark"] { --bg-color: #1a1a1a; --card-bg: #2d2d2d; --primary: #ecf0f1; --accent: #5dade2; --text: #e0e0e0; --border-color: #444444; } body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; height: 100vh; box-sizing: border-box; display: flex; gap: 20px; } .left-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; overflow-y: auto; } .right-pane { width: 350px; background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; } #pRunnerName { font-size: 2.5rem; font-weight: bold; color: var(--accent); margin: 0 0 20px 0; min-height: 3.5rem; word-break: break-word; } #pDisplay { font-family: 'Courier New', monospace; font-size: 5.5rem; font-weight: bold; color: var(--primary); letter-spacing: 2px; margin: 20px 0; } #pNotice { font-size: 1.8rem; font-weight: 600; min-height: 2.5rem; } .notice-penalty { color: var(--danger); } .notice-bonus { color: var(--success); } .notice-status { color: var(--status); } h2 { margin-top: 0; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; font-size: 1.4rem; color: var(--primary); } .pop-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; } .pop-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid var(--border-color); font-size: 1.05rem; } .pop-rank { font-weight: bold; color: var(--accent); margin-right: 10px; } .pop-time { font-family: 'Courier New', monospace; font-weight: bold; } .p-badge { font-size: 0.7rem; padding: 1px 4px; border-radius: 3px; color: white; font-weight: bold; margin-left: 4px; display: inline-block; } .pb-p { background-color: var(--penalty); } .pb-b { background-color: var(--bonus); } .pb-s { background-color: var(--status); } .multi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; width: 100%; } .multi-box { background: var(--bg-color); padding: 15px; border-radius: 8px; box-shadow: inset 0 0 5px rgba(0,0,0,0.05); } .multi-name { font-size: 1.5rem; font-weight: bold; color: var(--accent); } .multi-time { font-family: 'Courier New', monospace; font-size: 2.5rem; font-weight: bold; margin: 10px 0; } .pop-name-container { display: flex; align-items: center; gap: 6px; } .pop-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; font-size: 1.05rem; }</style></head><body><div class="left-pane" id="pLeftPane"><div id="pRunnerName">Bereit...</div><div id="pDisplay">00:00:00.00</div><div id="pNotice"></div></div><div class="right-pane"><h2 id="pPopHeader">🏆 Bestenliste</h2><ol id="pLeaderboard" class="pop-list"></ol></div></body></html>`);
+            popupWindow.document.close(); syncPopupTheme(); syncPopupRunnerName(); syncPopupNotice(); syncPopupLeaderboard();
+        }
+
+        function syncPopupTheme() { if (popupWindow && !popupWindow.closed) popupWindow.document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || 'light'); }
+        function syncPopupRunnerName() { if (!popupWindow || popupWindow.closed || activeTab === 'group') return; popupWindow.document.getElementById('pRunnerName').innerText = getCleanDisplayName(document.getElementById('runnerName').value.trim()) || (lockedEvents.includes(currentEvent) ? translations[currentLanguage].lblLobbyLocked : translations[currentLanguage].lblLobbyReady); }
+        function syncPopupTime(t) { if (popupWindow && !popupWindow.closed && activeTab === 'single') popupWindow.document.getElementById('pDisplay').innerText = t; }
+        function syncPopupNotice() { if (!popupWindow || popupWindow.closed || activeTab === 'group') return; const el = popupWindow.document.getElementById('pNotice'); if (currentStatus !== "REGULÄR") { el.innerText = `Status: ${currentStatus}`; el.className = "notice-status"; } else { el.innerText = ((penaltyTime > 0 ? `+${penaltyTime}s ` : '') + (bonusTime > 0 ? `-${bonusTime}s` : '')).trim(); el.className = penaltyTime >= bonusTime ? "notice-penalty" : "notice-bonus"; } }
+        
+        function syncPopupLeaderboard() {
+            if (!popupWindow || popupWindow.closed) return;
+            popupWindow.document.getElementById('pPopHeader').innerText = translations[currentLanguage].lblLeaderboardTitle;
+            const pOl = popupWindow.document.getElementById('pLeaderboard'); pOl.innerHTML = "";
+            if (runs.length === 0) pOl.innerHTML = `<li style="text-align:center;color:#7f8c8d;font-style:italic;padding-top:20px;">${currentLanguage === 'en' ? 'No runs' : 'Keine Läufe'}</li>`;
+            else runs.forEach((run, index) => { const li = popupWindow.document.createElement('li'); li.className = "pop-item"; let tags = (run.status !== "REGULÄR" ? `<span class="p-badge pb-s">${run.status}</span>` : '') + (run.penalties?.time > 0 ? `<span class="p-badge pb-p">+${run.penalties.time}s</span>` : '') + (run.bonuses?.time > 0 ? `<span class="p-badge pb-b">-${run.bonuses.time}s</span>` : ''); li.innerHTML = `<div class="pop-name-container"><span class="pop-rank">#${index+1}</span>${getRunnerIconHTML(run.name, false)}<span>${escapeHTML(getCleanDisplayName(run.name))}${tags}</span></div><div class="pop-time">${run.timeString}</div>`; pOl.appendChild(li); });
+            const leftPane = popupWindow.document.getElementById('pLeftPane');
+            if(activeTab === 'single') { if(!popupWindow.document.getElementById('pDisplay')) { leftPane.innerHTML = '<div id="pRunnerName">Bereit...</div><div id="pDisplay">00:00:00.00</div><div id="pNotice"></div>'; syncPopupRunnerName(); syncPopupNotice(); } }
+            else { if(groupRunners.length === 0) leftPane.innerHTML = `<div style="font-size:2rem; font-weight:bold; color:var(--text-light)">${currentLanguage === 'en' ? 'Group run: preparing...' : 'Gruppenlauf: Bereitstellung...'}</div>`; else leftPane.innerHTML = `<div class="multi-grid">${groupRunners.map(r => `<div class="multi-box"><div class="multi-name">${escapeHTML(getCleanDisplayName(r.name))} ${r.status !== 'REGULÄR'?'['+r.status+']':''}</div><div class="multi-time">${r.status==='DNF'||r.status==='DNS'?r.status:formatTime(r.timeMs)}</div><div style="font-size:0.9rem; color:var(--text-light)">${currentLanguage === 'en' ? 'Penalties' : 'Strafen'}: +${r.penalties.time}s | ${currentLanguage === 'en' ? 'Bonuses' : 'Boni'}: -${r.bonuses.time}s</div></div>`).join('')}</div>`; }
+        }
+
+        // --- Export ---
+        function prepareExportStyles() {
+            const element = document.getElementById('leaderboardCard'), cardHeader = document.getElementById('cardHeader');
+            const pdfEventTitle = document.getElementById('pdfEventTitle');
+            pdfEventTitle.innerText = currentEvent === 'Standardlauf' ? translations[currentLanguage].lblLeaderboardTitle : currentEvent;
+            
+            cardHeader.style.display = 'none'; pdfEventTitle.style.display = 'block'; element.classList.add('pdf-export-mode');
+            sortAndDisplayRuns(true);
+
+            return () => { 
+                cardHeader.style.display = 'flex'; pdfEventTitle.style.display = 'none'; element.classList.remove('pdf-export-mode'); 
+                sortAndDisplayRuns(false);
+            };
+        }
+
+        function exportToPDF() { if (runs.length === 0) return; const reset = prepareExportStyles(); setTimeout(() => { html2pdf().set({ margin: 15, filename: `Bestenliste_${currentEvent.replace(/[^a-z0-9]/gi, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: false, logging: false }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.getElementById('leaderboardCard')).save().then(reset).catch(reset); }, 150); }
+        async function shareAsImage() { if (runs.length === 0) return; const reset = prepareExportStyles(); try { setTimeout(async () => { const canvas = await html2canvas(document.getElementById('leaderboardCard'), { scale: 2, backgroundColor: '#ffffff', useCORS: false }); reset(); canvas.toBlob(async (blob) => { const file = new File([blob], 'bestenliste.png', { type: 'image/png' }); if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Ergebnisse' }); else { const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'Bestenliste.png'; a.click(); } }); }, 150); } catch { reset(); } }
+        function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeitmessung & Bestenliste</title>
+    <!-- Einbindung von html2pdf für den PDF-Export und html2canvas für den Bild-Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --penalty: #f39c12;
+            --bonus: #9b59b6;
+            --text: #333333;
+            --text-light: #7f8c8d;
+            --border-color: #dddddd;
+            --item-hover: #fafafa;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --primary: #ecf0f1;
+            --accent: #5dade2;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --penalty: #e67e22;
+            --bonus: #8e44ad;
+            --text: #e0e0e0;
+            --text-light: #95a5a6;
+            --border-color: #444444;
+            --item-hover: #3a3a3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .top-bar {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .theme-toggle-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            color: var(--text);
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .theme-toggle-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .event-setting { margin-bottom: 5px; }
+        
+        .event-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            border: 2px dashed var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--primary);
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .event-input:focus { border-color: var(--accent); border-style: solid; }
+
+        #pdfEventTitle {
+            display: none;
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .card-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        h2 { margin: 0; color: var(--primary); font-size: 1.5rem; flex-grow: 1; }
+
+        .header-actions { display: flex; gap: 8px; }
+
+        .btn-action-header {
+            color: white; border: none; padding: 8px 12px;
+            border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; gap: 6px; transition: opacity 0.2s;
+        }
+        .btn-action-header:hover { opacity: 0.9; }
+        .btn-pdf { background-color: #8e44ad; }
+        .btn-share { background-color: #27ae60; }
+
+        /* Bestenliste mit erweiterten Stats */
+        .leaderboard-list { list-style: none; padding: 0; margin: 0; }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+            gap: 10px;
+        }
+
+        .leaderboard-item:last-child { border-bottom: none; }
+        .leaderboard-item:hover { background-color: var(--item-hover); }
+
+        .runner-info { display: flex; align-items: center; gap: 12px; }
+        .rank { font-weight: bold; color: var(--accent); width: 25px; }
+        .runner-name { font-weight: 500; }
+        
+        .stats-badges {
+            display: flex;
+            gap: 6px;
+            font-size: 0.75rem;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+        .badge { padding: 2px 6px; border-radius: 4px; color: white; }
+        .badge-penalty { background-color: var(--penalty); }
+        .badge-bonus { background-color: var(--bonus); }
+
+        .right-side-container { display: flex; align-items: center; }
+        .runner-time { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: var(--primary); margin-right: 15px; }
+
+        .delete-btn {
+            background: none; border: none; color: var(--text-light); font-size: 1.2rem;
+            cursor: pointer; transition: color 0.2s; padding: 0 5px;
+        }
+        .delete-btn:hover { color: var(--danger); }
+        .empty-state { text-align: center; color: var(--text-light); font-style: italic; padding: 10px 0; }
+
+        /* Formular & Displays */
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+        label { font-weight: 600; color: var(--primary); }
+
+        input[type="text"], input[type="number"] {
+            padding: 12px; border: 2px solid var(--border-color); background-color: var(--card-bg);
+            color: var(--text); border-radius: 8px; font-size: 1rem; outline: none;
+            transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus { border-color: var(--accent); }
+
+        .stopwatch-display {
+            font-family: 'Courier New', Courier, monospace; font-size: 3rem;
+            text-align: center; font-weight: bold; color: var(--primary); margin: 20px 0; letter-spacing: 2px;
+        }
+
+        .adjustment-display { text-align: center; font-weight: 600; height: 20px; margin-bottom: 15px; }
+        .adjustment-display.penalty { color: var(--danger); }
+        .adjustment-display.bonus { color: var(--success); }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .btn {
+            padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: opacity 0.2s, transform 0.1s; color: white;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-start { background-color: var(--success); }
+        .btn-stop { background-color: var(--danger); }
+        .btn-popup-view { background-color: #34495e; grid-column: span 2; } /* Button für Leinwand-Popup */
+        .btn-save { background-color: var(--accent); grid-column: span 2; }
+
+        /* Dynamische Buttons */
+        .management-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; margin-top: 10px; }
+        .btn-add-type {
+            color: white; border: none; width: 32px; height: 32px; border-radius: 50%;
+            font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex;
+            justify-content: center; align-items: center; transition: opacity 0.2s;
+        }
+        .btn-add-type.penalty-add { background-color: var(--penalty); }
+        .btn-add-type.bonus-add { background-color: var(--bonus); }
+        .btn-add-type:hover { opacity: 0.9; }
+
+        .dynamic-button-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .custom-btn-container { display: inline-flex; align-items: center; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); color: white; }
+        .custom-btn-container.type-penalty { background-color: var(--penalty); }
+        .custom-btn-container.type-bonus { background-color: var(--bonus); }
+
+        .btn-custom-action { background: none; border: none; color: white; padding: 12px 15px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .btn-custom-action:hover:not(:disabled) { background-color: rgba(0, 0, 0, 0.1); }
+        .btn-custom-action:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .delete-custom-type-btn { background: rgba(0, 0, 0, 0.15); border: none; color: white; padding: 0 10px; align-self: stretch; cursor: pointer; font-size: 1rem; transition: background-color 0.2s; }
+        .delete-custom-type-btn:hover { background-color: var(--danger); }
+
+        /* Modal */
+        .custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+        /* PDF & Image Export Optimierungen */
+        .pdf-export-mode { padding: 30px !important; color: #2c3e50 !important; background: white !important; }
+        .pdf-export-mode h2 { color: #2c3e50 !important; border-bottom: 2px solid #3498db !important; }
+        .pdf-export-mode .runner-time { color: #2c3e50 !important; }
+        .pdf-export-mode .rank { color: #3498db !important; }
+        .pdf-export-mode .badge-penalty { background-color: #e67e22 !important; color: white !important; }
+        .pdf-export-mode .badge-bonus { background-color: #9b59b6 !important; color: white !important; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">
+            <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="card event-setting">
+            <input type="text" id="eventName" class="event-input" placeholder="Name des Laufs eingeben (z.B. Sommerlauf 2026)" oninput="saveEventName()" autocomplete="off">
+        </div>
+        
+        <!-- Bereich 1: Bestenliste -->
+        <div class="card" id="leaderboardCard">
+            <h1 id="pdfEventTitle">Bestenliste</h1>
+            
+            <div class="card-header-container" id="cardHeader">
+                <h2>🏆 Bestenliste</h2>
+                <div class="header-actions">
+                    <button class="btn-action-header btn-share" onclick="shareAsImage()" title="Als Bild teilen">
+                        🔗 Teilen
+                    </button>
+                    <button class="btn-action-header btn-pdf" onclick="exportToPDF()" title="Als PDF herunterladen">
+                        📄 PDF
+                    </button>
+                </div>
+            </div>
+            <ol id="leaderboard" class="leaderboard-list"></ol>
+        </div>
+
+        <!-- Bereich 2: Zeitmessung -->
+        <div class="card">
+            <div class="card-header-container">
+                <h2>⏱️ Neuer Lauf</h2>
+            </div>
+            
+            <div class="form-group">
+                <label for="runnerName">Name des Läufers:</label>
+                <input type="text" id="runnerName" placeholder="z.B. Max Mustermann" autocomplete="off" oninput="syncPopupRunnerName()">
+            </div>
+
+            <div class="stopwatch-display" id="display">00:00:00.00</div>
+            <div id="adjustmentNotice" class="adjustment-display"></div>
+
+            <div class="btn-group">
+                <button class="btn btn-start" id="startBtn" onclick="startTimer()">Start</button>
+                <button class="btn btn-stop" id="stopBtn" onclick="stopTimer()" disabled>Stop</button>
+            </div>
+            
+            <div class="btn-group" style="margin-bottom:20px;">
+                <button class="btn btn-popup-view" onclick="openScreenPopup()">📺 Leinwand-Ansicht öffnen</button>
+            </div>
+
+            <div class="management-header">
+                <label>Strafsekunden hinzufügen (+):</label>
+                <button class="btn-add-type penalty-add" onclick="openModal('penalty')">+</button>
+            </div>
+            <div id="dynamicPenaltyGroup" class="dynamic-button-group"></div>
+
+            <div class="management-header">
+                <label>Bonuszeit abziehen (-):</label>
+                <button class="btn-add-type bonus-add" onclick="openModal('bonus')">+</button>
+            </div>
+            <div id="dynamicBonusGroup" class="dynamic-button-group"></div>
+
+            <div class="btn-group" style="margin-top:20px;">
+                <button class="btn btn-save" id="saveBtn" onclick="saveRun()" disabled>Lauf Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="customModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="modalTitle" style="margin-top:0;">Neuen Button anlegen</h3>
+            <div class="form-group">
+                <label for="newBtnName">Bezeichnung / Name:</label>
+                <input type="text" id="newBtnName" placeholder="z.B. Torfehler">
+            </div>
+            <div class="form-group">
+                <label for="newBtnSeconds">Zeit (in Sekunden):</label>
+                <input type="number" id="newBtnSeconds" placeholder="z.B. 5" min="1">
+            </div>
+            <div class="modal-actions">
+                <button class="btn" style="background-color: var(--text-light);" onclick="closeModal()">Abbrechen</button>
+                <button class="btn" style="background-color: var(--success);" onclick="createNewButton()">Erstellen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startTime = 0, elapsedTime = 0, timerInterval = null, currentTotalMs = 0;
+        let penaltyCount = 0, penaltyTime = 0, bonusCount = 0, bonusTime = 0;
+        let currentModalMode = 'penalty';
+        let popupWindow = null; // Instanz für das Leinwand-Fenster
+
+        let runs = JSON.parse(localStorage.getItem('runnerLeaderboard')) || [];
+        let penaltyTypes = JSON.parse(localStorage.getItem('runnerPenaltyTypes')) || [
+            { id: 1, name: "Kemler Falsch (+5s)", seconds: 5 },
+            { id: 2, name: "UN Nr. Falsch (+5s)", seconds: 5 },
+            { id: 3, name: "Beide Falsch (+15s)", seconds: 15 }
+        ];
+        let bonusTypes = JSON.parse(localStorage.getItem('runnerBonusTypes')) || [
+            { id: 1, name: "Zusatzaufgabe gelöst (-10s)", seconds: 10 }
+        ];
+
+        window.onload = function() {
+            updateLeaderboardDisplay();
+            renderCustomButtons('penalty');
+            renderCustomButtons('bonus');
+            initTheme();
+            document.getElementById('eventName').value = localStorage.getItem('runnerEventName') || '';
+        };
+
+        window.onunload = function() {
+            if (popupWindow) popupWindow.close();
+        };
+
+        function saveEventName() {
+            localStorage.setItem('runnerEventName', document.getElementById('eventName').value);
+        }
+
+        // --- Dark Mode ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleComponents(savedTheme);
+            syncPopupTheme();
+        }
+        function toggleTheme() {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleComponents(newTheme);
+            syncPopupTheme();
+        }
+        function updateThemeToggleComponents(theme) {
+            const icon = document.getElementById('themeIcon'), text = document.getElementById('themeText');
+            if (theme === 'dark') { icon.innerText = "☀️"; text.innerText = "Light Mode"; }
+            else { icon.innerText = "🌙"; text.innerText = "Dark Mode"; }
+        }
+
+        // --- Popup Leinwand-Logik ---
+        function openScreenPopup() {
+            if (popupWindow && !popupWindow.closed) {
+                popupWindow.focus();
+                return;
+            }
+
+            // Neues Fenster öffnen (Breite: 1000px, Höhe: 600px)
+            popupWindow = window.open("", "LeinwandAnsicht", "width=1000,height=600,scrollbars=yes,resizable=yes");
+            
+            // HTML-Struktur in das Popup schreiben
+            popupWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Live-Anzeige Zeitmessung</title>
+                    <style>
+                        :root {
+                            --bg-color: #f4f7f6; --card-bg: #ffffff; --primary: #2c3e50; --accent: #3498db;
+                            --danger: #e74c3c; --success: #2ecc71; --text: #333333; --border-color: #dddddd;
+                            --penalty: #f39c12; --bonus: #9b59b6;
+                        }
+                        [data-theme="dark"] {
+                            --bg-color: #1a1a1a; --card-bg: #2d2d2d; --primary: #ecf0f1; --accent: #5dade2;
+                            --text: #e0e0e0; --border-color: #444444;
+                        }
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg-color); color: var(--text);
+                            margin: 0; padding: 20px; height: 100vh; box-sizing: border-box; display: flex; gap: 20px;
+                        }
+                        .left-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 12px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
+                        .right-pane { width: 350px; background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; }
+                        #pRunnerName { font-size: 2.5rem; font-weight: bold; color: var(--accent); margin: 0 0 20px 0; min-height: 3.5rem; word-break: break-word; }
+                        #pDisplay { font-family: 'Courier New', monospace; font-size: 5.5rem; font-weight: bold; color: var(--primary); letter-spacing: 2px; margin: 20px 0; }
+                        #pNotice { font-size: 1.8rem; font-weight: 600; min-height: 2.5rem; }
+                        .notice-penalty { color: var(--danger); }
+                        .notice-bonus { color: var(--success); }
+                        h2 { margin-top: 0; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; font-size: 1.4rem; color: var(--primary); }
+                        .pop-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+                        .pop-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid var(--border-color); font-size: 1.05rem; }
+                        .pop-item:last-child { border-bottom: none; }
+                        .pop-rank { font-weight: bold; color: var(--accent); margin-right: 10px; }
+                        .pop-time { font-family: 'Courier New', monospace; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="left-pane">
+                        <div id="pRunnerName">Bereit...</div>
+                        <div id="pDisplay">00:00:00.00</div>
+                        <div id="pNotice"></div>
+                    </div>
+                    <div class="right-pane">
+                        <h2>🏆 Bestenliste</h2>
+                        <ol id="pLeaderboard" class="pop-list"></ol>
+                    </div>
+                </body>
+                </html>
+            `);
+            popupWindow.document.close();
+            
+            // Direkt Daten & Theme initial synchronisieren
+            syncPopupTheme();
+            syncPopupRunnerName();
+            syncPopupNotice();
+            syncPopupLeaderboard();
+        }
+
+        function syncPopupTheme() {
+            if (popupWindow && !popupWindow.closed) {
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                popupWindow.document.documentElement.setAttribute('data-theme', currentTheme);
+            }
+        }
+        function syncPopupRunnerName() {
+            if (popupWindow && !popupWindow.closed) {
+                const name = document.getElementById('runnerName').value.trim();
+                popupWindow.document.getElementById('pRunnerName').innerText = name ? name : "Bereit...";
+            }
+        }
+        function syncPopupTime(timeString) {
+            if (popupWindow && !popupWindow.closed) {
+                popupWindow.document.getElementById('pDisplay').innerText = timeString;
+            }
+        }
+        function syncPopupNotice() {
+            if (popupWindow && !popupWindow.closed) {
+                const noticeEl = popupWindow.document.getElementById('pNotice');
+                let text = "";
+                if (penaltyTime > 0) text += `+${penaltyTime}s Strafe `;
+                if (bonusTime > 0) text += `-${bonusTime}s Bonus`;
+                
+                noticeEl.innerText = text.trim();
+                noticeEl.className = penaltyTime >= bonusTime ? "notice-penalty" : "notice-bonus";
+            }
+        }
+        function syncPopupLeaderboard() {
+            if (popupWindow && !popupWindow.closed) {
+                const pOl = popupWindow.document.getElementById('pLeaderboard');
+                pOl.innerHTML = "";
+                if (runs.length === 0) { pOl.innerHTML = '<li style="text-align:center; color:#7f8c8d; font-style:italic; padding-top:20px;">Keine Läufe</li>'; return; }
+                
+                runs.forEach((run, index) => {
+                    const li = popupWindow.document.createElement('li');
+                    li.className = "pop-item";
+                    li.innerHTML = `
+                        <div><span class="pop-rank">#${index+1}</span><span>${escapeHTML(run.name)}</span></div>
+                        <div class="pop-time">${run.timeString}</div>
+                    `;
+                    pOl.appendChild(li);
+                });
+            }
+        }
+
+        // --- Buttons verwalten ---
+        function openModal(mode) {
+            currentModalMode = mode;
+            document.getElementById('modalTitle').innerText = mode === 'penalty' ? "Neuen Straf-Button anlegen (+)" : "Neuen Bonus-Button anlegen (-)";
+            document.getElementById('customModal').style.display = 'flex';
+            document.getElementById('newBtnName').focus();
+        }
+        function closeModal() {
+            document.getElementById('customModal').style.display = 'none';
+            document.getElementById('newBtnName').value = ''; document.getElementById('newBtnSeconds').value = '';
+        }
+        function createNewButton() {
+            const name = document.getElementById('newBtnName').value.trim(), seconds = parseInt(document.getElementById('newBtnSeconds').value, 10);
+            if (!name || isNaN(seconds) || seconds <= 0) { alert("Ungültige Eingabe."); return; }
+
+            if (currentModalMode === 'penalty') {
+                penaltyTypes.push({ id: Date.now(), name: `${name} (+${seconds}s)`, seconds: seconds });
+                localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes));
+                renderCustomButtons('penalty');
+            } else {
+                bonusTypes.push({ id: Date.now(), name: `${name} (-${seconds}s)`, seconds: seconds });
+                localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes));
+                renderCustomButtons('bonus');
+            }
+            closeModal();
+        }
+        function deleteCustomType(id, mode, event) {
+            event.stopPropagation();
+            if (mode === 'penalty') {
+                penaltyTypes = penaltyTypes.filter(p => p.id !== id);
+                localStorage.setItem('runnerPenaltyTypes', JSON.stringify(penaltyTypes));
+                renderCustomButtons('penalty');
+            } else {
+                bonusTypes = bonusTypes.filter(b => b.id !== id);
+                localStorage.setItem('runnerBonusTypes', JSON.stringify(bonusTypes));
+                renderCustomButtons('bonus');
+            }
+        }
+        function renderCustomButtons(mode) {
+            const container = document.getElementById(mode === 'penalty' ? 'dynamicPenaltyGroup' : 'dynamicBonusGroup');
+            container.innerHTML = '';
+            const targetArray = mode === 'penalty' ? penaltyTypes : bonusTypes;
+            if (targetArray.length === 0) { container.innerHTML = `<span style="color: var(--text-light); font-style: italic; font-size: 0.9rem;">Keine Buttons.</span>`; return; }
+            
+            const isSaveDisabled = document.getElementById('saveBtn').disabled;
+            targetArray.forEach(item => {
+                const wrapper = document.createElement('div');
+                wrapper.className = `custom-btn-container type-${mode}`;
+                const mainBtn = document.createElement('button');
+                mainBtn.className = 'btn-custom-action';
+                mainBtn.innerText = item.name;
+                mainBtn.disabled = isSaveDisabled;
+                mainBtn.onclick = () => handleTimeAdjustment(mode, item.seconds);
+
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-custom-type-btn'; delBtn.innerHTML = '&times;';
+                delBtn.onclick = (e) => deleteCustomType(item.id, mode, e);
+
+                wrapper.appendChild(mainBtn); wrapper.appendChild(delBtn); container.appendChild(wrapper);
+            });
+        }
+        function setActionButtonsDisabled(disabled) {
+            document.querySelectorAll('.btn-custom-action').forEach(btn => btn.disabled = disabled);
+        }
+
+        // --- Zeitmessung ---
+        function formatTime(totalMilliseconds) {
+            if (totalMilliseconds < 0) totalMilliseconds = 0;
+            let hours = Math.floor(totalMilliseconds / 3600000), minutes = Math.floor((totalMilliseconds % 3600000) / 60000);
+            let seconds = Math.floor((totalMilliseconds % 60000) / 1000), hundredths = Math.floor((totalMilliseconds % 1000) / 10);
+            return ((hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds + "." + (hundredths < 10 ? "0" : "") + hundredths);
+        }
+
+        function startTimer() {
+            if (!document.getElementById('runnerName').value.trim()) { alert("Bitte Namen eingeben."); return; }
+            elapsedTime = 0; currentTotalMs = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0;
+            document.getElementById('adjustmentNotice').innerText = "";
+            syncPopupRunnerName();
+            syncPopupNotice();
+            
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                elapsedTime = Date.now() - startTime;
+                currentTotalMs = elapsedTime;
+                const formatted = formatTime(currentTotalMs);
+                document.getElementById('display').innerText = formatted;
+                syncPopupTime(formatted);
+            }, 10);
+            document.getElementById('runnerName').disabled = true; document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false; document.getElementById('saveBtn').disabled = true;
+            setActionButtonsDisabled(true);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = false;
+            setActionButtonsDisabled(false);
+        }
+
+        function handleTimeAdjustment(mode, seconds) {
+            if (mode === 'penalty') { penaltyCount++; penaltyTime += seconds; currentTotalMs += (seconds * 1000); } 
+            else { bonusCount++; bonusTime += seconds; currentTotalMs -= (seconds * 1000); }
+            if (currentTotalMs < 0) currentTotalMs = 0;
+            
+            const formatted = formatTime(currentTotalMs);
+            document.getElementById('display').innerText = formatted;
+            syncPopupTime(formatted);
+            
+            const notice = document.getElementById('adjustmentNotice');
+            let text = "";
+            if (penaltyTime > 0) text += `+${penaltyTime}s Strafe `;
+            if (bonusTime > 0) text += `-${bonusTime}s Bonus`;
+            notice.innerText = text.trim();
+            notice.className = `adjustment-display ${penaltyTime >= bonusTime ? 'penalty' : 'bonus'}`;
+            
+            syncPopupNotice();
+        }
+
+        function saveRun() {
+            runs.push({
+                id: Date.now(), name: document.getElementById('runnerName').value.trim(), timeMs: currentTotalMs, timeString: formatTime(currentTotalMs),
+                penalties: { count: penaltyCount, time: penaltyTime }, bonuses: { count: bonusCount, time: bonusTime }
+            });
+            runs.sort((a, b) => a.timeMs - b.timeMs);
+            localStorage.setItem('runnerLeaderboard', JSON.stringify(runs));
+            updateLeaderboardDisplay(); 
+            syncPopupLeaderboard();
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('runnerName').value = ""; document.getElementById('runnerName').disabled = false;
+            document.getElementById('display').innerText = "00:00:00.00"; document.getElementById('adjustmentNotice').innerText = "";
+            document.getElementById('startBtn').disabled = false; document.getElementById('saveBtn').disabled = true;
+            setActionButtonsDisabled(true);
+            elapsedTime = 0; currentTotalMs = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0;
+            
+            syncPopupRunnerName();
+            syncPopupTime("00:00:00.00");
+            syncPopupNotice();
+        }
+
+        function updateLeaderboardDisplay() {
+            const ol = document.getElementById('leaderboard'); ol.innerHTML = "";
+            if (runs.length === 0) { ol.innerHTML = '<li class="empty-state">Noch keine Läufe registriert.</li>'; return; }
+
+            runs.forEach((run, index) => {
+                const li = document.createElement('li'); li.className = "leaderboard-item";
+                let badges = '';
+                if(run.penalties && run.penalties.count > 0) badges += `<span class="badge badge-penalty">${run.penalties.count}x Strafe (+${run.penalties.time}s)</span>`;
+                if(run.bonuses && run.bonuses.count > 0) badges += `<span class="badge badge-bonus">${run.bonuses.count}x Bonus (-${run.bonuses.time}s)</span>`;
+
+                li.innerHTML = `
+                    <div class="runner-info">
+                        <span class="rank">#${index + 1}</span>
+                        <div>
+                            <div class="runner-name">${escapeHTML(run.name)}</div>
+                            <div class="stats-badges">${badges}</div>
+                        </div>
+                    </div>
+                    <div class="right-side-container">
+                        <span class="runner-time">${run.timeString}</span>
+                        <button class="delete-btn" onclick="deleteRun(${run.id})">&times;</button>
+                    </div>
+                `;
+                ol.appendChild(li);
+            });
+        }
+
+        function deleteRun(id) {
+            runs = runs.filter(r => r.id !== id);
+            localStorage.setItem('runnerLeaderboard', JSON.stringify(runs));
+            updateLeaderboardDisplay();
+            syncPopupLeaderboard();
+        }
+
+        // --- Export & Teilen ---
+        function prepareExportStyles() {
+            const element = document.getElementById('leaderboardCard'), cardHeader = document.getElementById('cardHeader');
+            const pdfEventTitle = document.getElementById('pdfEventTitle'), deleteButtons = element.querySelectorAll('.delete-btn');
+            const inputEventName = document.getElementById('eventName').value.trim();
+            
+            pdfEventTitle.innerText = inputEventName ? inputEventName : "🏆 Bestenliste";
+            cardHeader.style.display = 'none'; pdfEventTitle.style.display = 'block';
+            deleteButtons.forEach(btn => btn.style.display = 'none');
+            element.classList.add('pdf-export-mode');
+
+            return () => {
+                cardHeader.style.display = 'flex'; pdfEventTitle.style.display = 'none';
+                deleteButtons.forEach(btn => btn.style.display = 'inline-block');
+                element.classList.remove('pdf-export-mode');
+            };
+        }
+
+        function exportToPDF() {
+            if (runs.length === 0) { alert("Keine Einträge vorhanden."); return; }
+            const resetStyles = prepareExportStyles();
+            const inputEventName = document.getElementById('eventName').value.trim();
+            const safeFileName = inputEventName ? `Bestenliste_${inputEventName.replace(/[^a-z0-9]/gi, '_')}.pdf` : 'Bestenliste.pdf';
+
+            const opt = { margin: 15, filename: safeFileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            html2pdf().set(opt).from(document.getElementById('leaderboardCard')).save().then(resetStyles);
+        }
+
+        async function shareAsImage() {
+            if (runs.length === 0) { alert("Keine Einträge vorhanden."); return; }
+            const resetStyles = prepareExportStyles();
+            const card = document.getElementById('leaderboardCard');
+
+            try {
+                const canvas = await html2canvas(card, { scale: 2, backgroundColor: document.documentElement.getAttribute('data-theme') === 'dark' ? '#2d2d2d' : '#ffffff' });
+                resetStyles();
+
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], 'bestenliste.png', { type: 'image/png' });
+                    
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: 'Bestenliste Ergebnisse', text: 'Hier sind die aktuellen Laufergebnisse!' });
+                    } else {
+                        const a = document.createElement('a');
+                        a.href = canvas.toDataURL('image/png'); a.download = 'Bestenliste.png'; a.click();
+                    }
+                }, 'image/png');
+            } catch (err) {
+                console.error("Fehler beim Teilen:", err);
+                resetStyles();
+            }
+        }
+
+        function escapeHTML(str) { return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
+    </script>
+</body>
+</html>
