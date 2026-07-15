@@ -32,7 +32,7 @@ I am a scout leader from Vienna/Austria. For our summer camp 2026 I prepeared a 
 ## 📦 Installation & Setup
 
 1. Clone this repository or download the source code.
-2. Ensure all files (`index.html`, `lang.info`, `ver.info`, `whitelabel.info`) and the `lang/` directory are present in the root folder.
+2. Ensure all files (`index.html`, `style.css`, `lang.info`, `ver.info`, `whitelabel.info`) and the `lang/` directory are present in the root folder.
 3. **Important:** Due to browser security policies regarding `fetch()`, please run the application through a local web server (e.g., VS Code "Live Server", `python -m http.server`, or similar). Opening the `index.html` directly via `file://` will prevent the language files from loading.
 
 ## 🌍 Adding a New Language
