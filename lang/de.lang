@@ -55,6 +55,16 @@
   "lblNewBtnPlaceholder": "z.B. Hindernis übersprungen",
   "lblDeleteAllData": "🗑️ Alle Daten löschen",
   "lblEnterRunnerName": "Bitte einen Namen eingeben.",
+  "lblMenuText": "Menü",
+  "lblTrashText": "Papierkorb",
+  "lblTrashTitle": "🗑️ Papierkorb",
+  "lblTrashEmpty": "Der Papierkorb ist leer.",
+  "lblTrashEvents": "Gelöschte Events:",
+  "lblTrashRuns": "Gelöschte Läufe:",
+  "lblRestoreBtn": "Wiederherstellen",
+  "lblTrashClose": "Schließen",
+  "lblErrorRestoreEventExists": "Ein Event mit diesem Namen existiert bereits. Bitte löschen oder umbenennen.",
+  "lblErrorRestoreNoEvent": "Das zugehörige Event existiert nicht. Bitte stellt zuerst das Event wieder her.",
   "lblConfirmDeleteAll": "Warnung: Dies löscht alle Läufe, Events und Einstellungen. Wirklich fortfahren?",
   "lblEmptyLeaderboard": "Noch keine Läufe registriert."
 

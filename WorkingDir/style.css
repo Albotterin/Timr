@@ -325,3 +325,45 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus { border-colo
     color: var(--text); 
     line-height: 1.4; 
 }
+
+.trash-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-color);
+    border-radius: 6px;
+    border-left: 4px solid var(--text-light);
+    margin-bottom: 8px;
+}
+.trash-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.trash-item-title {
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: var(--primary);
+}
+.trash-item-sub {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+.trash-actions {
+    display: flex;
+    gap: 8px;
+}
+.btn-trash-action {
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: white;
+    transition: opacity 0.2s;
+}
+.btn-trash-action:hover { opacity: 0.9; }
+.btn-restore { background-color: var(--success); }
+.btn-perm-delete { background-color: var(--danger); }

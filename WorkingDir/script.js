@@ -608,7 +608,30 @@
         function closeEventModal() { document.getElementById('eventModal').style.display = 'none'; document.getElementById('newEventName').value = ''; }
         function createNewEvent() { const name = document.getElementById('newEventName').value.trim(); if (!name) { alert(translations['lblErrorNoEventName'] || "Bitte Eventnamen eingeben."); return; } if (eventList.includes(name)) { alert(translations['lblErrorEventExists'] || "Event existiert bereits."); return; } eventList.push(name); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); currentEvent = name; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); closeEventModal(); }
         function handleEventSelectChange() { currentEvent = document.getElementById('eventSelect').value; localStorage.setItem('runnerCurrentEventName', currentEvent); loadRunsForCurrentEvent(); resetForm(); updateLockBtnStyle(); }
-        function deleteCurrentEvent() { if (currentEvent === 'Standardlauf') { alert(translations['lblErrorCannotDeleteStandard'] || "Standardlauf kann nicht gelöscht werden."); return; } if (!confirm(translations['lblConfirmDeleteEvent'] || `Event "${currentEvent}" wirklich löschen?`)) return; localStorage.removeItem(`runnerLeaderboard_${currentEvent}`); eventList = eventList.filter(e => e !== currentEvent); lockedEvents = lockedEvents.filter(e => e !== currentEvent); localStorage.setItem('runnerEventList', JSON.stringify(eventList)); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); currentEvent = 'Standardlauf'; localStorage.setItem('runnerCurrentEventName', currentEvent); buildEventSelectMenu(); loadRunsForCurrentEvent(); resetForm(); }
+         
+        function deleteCurrentEvent() { 
+            if (currentEvent === 'Standardlauf') { alert(translations['lblErrorCannotDeleteStandard'] || "Standardlauf kann nicht gelöscht werden."); return; } 
+            if (!confirm(translations['lblConfirmDeleteEvent'] || `Event "${currentEvent}" wirklich löschen?`)) return; 
+            
+            // In den Papierkorb verschieben
+            const trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
+            const isLocked = lockedEvents.includes(currentEvent);
+            trash.events.push({ trashId: Date.now() + Math.random(), deletedAt: Date.now(), eventName: currentEvent, runsData: runs, isLocked: isLocked });
+            localStorage.setItem('runnerTrash', JSON.stringify(trash));
+
+            // Lokal löschen
+            localStorage.removeItem(`runnerLeaderboard_${currentEvent}`); 
+            eventList = eventList.filter(e => e !== currentEvent); 
+            lockedEvents = lockedEvents.filter(e => e !== currentEvent); 
+            localStorage.setItem('runnerEventList', JSON.stringify(eventList)); 
+            localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); 
+            currentEvent = 'Standardlauf'; 
+            localStorage.setItem('runnerCurrentEventName', currentEvent); 
+            buildEventSelectMenu(); 
+            loadRunsForCurrentEvent(); 
+            resetForm(); 
+        }
+        
         function toggleLockCurrentEvent() { if (isRunning || groupRunners.length > 0) { alert(translations['lblTabSwitchBlock'] || "Blockiert während Messung."); return; } if(lockedEvents.includes(currentEvent)) lockedEvents = lockedEvents.filter(e => e !== currentEvent); else lockedEvents.push(currentEvent); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); buildEventSelectMenu(); resetForm(); }
         function updateLockBtnStyle() { const btn = document.getElementById('lockEventBtn'); const isLocked = lockedEvents.includes(currentEvent); btn.innerText = isLocked ? "🔓" : "🔒"; btn.className = isLocked ? "btn-event-action btn-lock-event is-locked" : "btn-event-action btn-lock-event"; }
         function loadRunsForCurrentEvent() { runs = JSON.parse(localStorage.getItem(`runnerLeaderboard_${currentEvent}`)) || []; sortAndDisplayRuns(); }
@@ -704,8 +727,22 @@
         }
         
         
-        function deleteRun(id) { runs = runs.filter(r => r.id !== id); saveRunsForCurrentEvent(); sortAndDisplayRuns(); }
+        function deleteRun(id) { 
+            const runIndex = runs.findIndex(r => r.id === id);
+            if (runIndex === -1) return;
+            const run = runs[runIndex];
+            
+            // In den Papierkorb verschieben
+            const trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
+            trash.runs.push({ trashId: Date.now() + Math.random(), deletedAt: Date.now(), eventName: currentEvent, runData: run });
+            localStorage.setItem('runnerTrash', JSON.stringify(trash));
 
+            runs.splice(runIndex, 1);
+            saveRunsForCurrentEvent(); 
+            sortAndDisplayRuns(); 
+        }
+        
+        
         function openEditModal(id) {
             const run = runs.find(r => r.id === id); if (!run) return;
             document.getElementById('editRunId').value = run.id; document.getElementById('editRunnerName').value = run.name; document.getElementById('editStatus').value = run.status;
@@ -848,4 +885,106 @@
     }
 }
 
-        
+   
+
+
+        // --- PAPIERKORB LOGIK ---
+        function openTrashModal() {
+            const trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
+            const eventsCont = document.getElementById('trashEventsContainer');
+            const runsCont = document.getElementById('trashRunsContainer');
+            const emptyMsg = document.getElementById('trashEmptyMsg');
+            const lblEvents = document.getElementById('lblTrashEvents');
+            const lblRuns = document.getElementById('lblTrashRuns');
+
+            eventsCont.innerHTML = ''; runsCont.innerHTML = '';
+
+            if (trash.events.length === 0 && trash.runs.length === 0) {
+                lblEvents.style.display = 'none'; lblRuns.style.display = 'none'; emptyMsg.style.display = 'block';
+                emptyMsg.innerText = translations['lblTrashEmpty'] || "Der Papierkorb ist leer.";
+            } else {
+                emptyMsg.style.display = 'none';
+                lblEvents.style.display = trash.events.length > 0 ? 'block' : 'none';
+                lblRuns.style.display = trash.runs.length > 0 ? 'block' : 'none';
+
+                trash.events.forEach(te => {
+                    const div = document.createElement('div'); div.className = 'trash-item';
+                    const d = new Date(te.deletedAt).toLocaleString();
+                    div.innerHTML = `
+                        <div class="trash-item-info">
+                            <span class="trash-item-title">🏆 ${escapeHTML(te.eventName)}</span>
+                            <span class="trash-item-sub">Gelöscht: ${d} | ${te.runsData.length} Läufe</span>
+                        </div>
+                        <div class="trash-actions">
+                            <button class="btn-trash-action btn-restore" onclick="restoreTrashEvent(${te.trashId})">${translations['lblRestoreBtn'] || 'Wiederherstellen'}</button>
+                            <button class="btn-trash-action btn-perm-delete" onclick="permDeleteTrashEvent(${te.trashId})">❌</button>
+                        </div>
+                    `;
+                    eventsCont.appendChild(div);
+                });
+
+                trash.runs.forEach(tr => {
+                    const div = document.createElement('div'); div.className = 'trash-item';
+                    const d = new Date(tr.deletedAt).toLocaleString();
+                    div.innerHTML = `
+                        <div class="trash-item-info">
+                            <span class="trash-item-title">🏃 ${escapeHTML(getCleanDisplayName(tr.runData.name))} (${tr.runData.timeString})</span>
+                            <span class="trash-item-sub">Event: ${escapeHTML(tr.eventName)} | Gelöscht: ${d}</span>
+                        </div>
+                        <div class="trash-actions">
+                            <button class="btn-trash-action btn-restore" onclick="restoreTrashRun(${tr.trashId})">${translations['lblRestoreBtn'] || 'Wiederherstellen'}</button>
+                            <button class="btn-trash-action btn-perm-delete" onclick="permDeleteTrashRun(${tr.trashId})">❌</button>
+                        </div>
+                    `;
+                    runsCont.appendChild(div);
+                });
+            }
+            document.getElementById('trashModal').style.display = 'flex';
+        }
+
+        function closeTrashModal() { document.getElementById('trashModal').style.display = 'none'; }
+
+        function restoreTrashEvent(trashId) {
+            let trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
+            const index = trash.events.findIndex(e => e.trashId === trashId);
+            if(index === -1) return;
+            const te = trash.events[index];
+
+            if (eventList.includes(te.eventName)) { alert(translations['lblErrorRestoreEventExists'] || "Existiert bereits."); return; }
+
+            eventList.push(te.eventName); localStorage.setItem('runnerEventList', JSON.stringify(eventList));
+            if (te.isLocked) { lockedEvents.push(te.eventName); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); }
+            localStorage.setItem(`runnerLeaderboard_${te.eventName}`, JSON.stringify(te.runsData));
+
+            trash.events.splice(index, 1); localStorage.setItem('runnerTrash', JSON.stringify(trash));
+            buildEventSelectMenu(); openTrashModal();
+        }
+
+        function permDeleteTrashEvent(trashId) {
+            let trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
+            trash.events = trash.events.filter(e => e.trashId !== trashId);
+            localStorage.setItem('runnerTrash', JSON.stringify(trash)); openTrashModal();
+        }
+
+        function restoreTrashRun(trashId) {
+            let trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
+            const index = trash.runs.findIndex(r => r.trashId === trashId);
+            if(index === -1) return;
+            const tr = trash.runs[index];
+
+            if (!eventList.includes(tr.eventName)) { alert(translations['lblErrorRestoreNoEvent'] || "Event fehlt."); return; }
+
+            let eventRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${tr.eventName}`)) || [];
+            eventRuns.push(tr.runData);
+            localStorage.setItem(`runnerLeaderboard_${tr.eventName}`, JSON.stringify(eventRuns));
+
+            if (currentEvent === tr.eventName) { runs = eventRuns; sortAndDisplayRuns(); }
+
+            trash.runs.splice(index, 1); localStorage.setItem('runnerTrash', JSON.stringify(trash)); openTrashModal();
+        }
+
+        function permDeleteTrashRun(trashId) {
+            let trash = JSON.parse(localStorage.getItem('runnerTrash')) || { events: [], runs: [] };
+            trash.runs = trash.runs.filter(r => r.trashId !== trashId);
+            localStorage.setItem('runnerTrash', JSON.stringify(trash)); openTrashModal();
+        }

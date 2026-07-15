@@ -13,6 +13,16 @@
     <div class="top-bar">
         <a id="whitelabelTitle" class="whitelabel-title">⏱️ Zeitmessung</a>
         <div class="top-bar-actions">
+        	      <div class="dropdown">
+                <button class="theme-toggle-btn">📋 <span id="lblMenuText">Menü</span></button>
+                <div class="dropdown-content">
+                    <button onclick="openTrashModal()" style="display: flex; align-items: center; gap: 8px;">
+                        <span>🗑️</span> <span id="lblTrashText">Papierkorb</span>
+                    </button>
+                </div>
+            </Div>
+            
+        	
             <!-- Vereintes Einstellungs-Dropdown -->
             <div class="dropdown">
                 <button id="lblSettingsDropdown" class="theme-toggle-btn">⚙️ <span id="lblSettingsText">Optionen</span></button>
@@ -274,6 +284,25 @@
             </div>
         </div>
     </div>
+
+        <div id="trashModal" class="custom-modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <h3 id="lblTrashTitle" style="margin-top:0; color: var(--primary);">🗑️ Papierkorb</h3>
+            
+            <h4 id="lblTrashEvents" style="margin-bottom: 8px; color: var(--text-light);">Gelöschte Events:</h4>
+            <div id="trashEventsContainer"></div>
+            
+            <h4 id="lblTrashRuns" style="margin-bottom: 8px; margin-top: 20px; color: var(--text-light);">Gelöschte Läufe:</h4>
+            <div id="trashRunsContainer"></div>
+
+            <div id="trashEmptyMsg" style="display:none; text-align:center; color: var(--text-light); font-style:italic; padding: 20px;"></div>
+
+            <div class="modal-actions">
+                <button id="lblTrashClose" class="btn" style="background-color: var(--accent);" onclick="closeTrashModal()">Schließen</button>
+            </div>
+        </div>
+    </div>
+
 
      <script src="script.js"></script>
      
