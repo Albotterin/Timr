@@ -77,6 +77,7 @@
                     <div class="dropdown">
                         <button class="theme-toggle-btn btn-event-trigger" title="Lauf-Optionen">⋮</button>
                         <div class="dropdown-content" style="right: 0; top: 100%;">
+                        	<button onclick="openModeModal()"><span id="lblEventActionMode">⚙️ Wertungsmodus</span></button>
                             <button onclick="openEventRenameModal()"><span id="lblEventActionRename">✏️ Umbenennen</span></button>
                             <button onclick="toggleLockCurrentEvent()"><span id="lblEventActionLock">🔒 Sperren</span></button>
                             <button onclick="deleteCurrentEvent()" style="color: var(--danger);"><span id="lblEventActionDelete">🗑️ Löschen</span></button>
@@ -344,6 +345,32 @@
             </div>
         </div>
     </div>
+    
+        <div id="modeModal" class="custom-modal">
+        <div class="modal-content">
+            <h3 id="lblModeModalTitle" style="margin-top:0; color: var(--primary);">Wertungsmodus</h3>
+            
+            <div class="form-group">
+                <label id="lblModeSelectLabel" for="eventModeSelect">Ziel des Events:</label>
+                <select id="eventModeSelect" class="event-select" style="font-size: 1rem;" onchange="toggleTargetTimeInput()">
+                    <option value="fastest" id="lblModeFastest">Schnellste Zeit gewinnt</option>
+                    <option value="slowest" id="lblModeSlowest">Langsamste Zeit gewinnt</option>
+                    <option value="target" id="lblModeTarget">Zielzeit am nächsten</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="targetTimeContainer" style="display: none;">
+                <label id="lblModeTargetTimeLabel" for="eventTargetTimeInput">Zielzeit (hh:mm:ss.ff):</label>
+                <input type="text" id="eventTargetTimeInput" placeholder="00:00:00.00" autocomplete="off">
+            </div>
+            
+            <div class="modal-actions">
+                <button id="lblModeCancel" class="btn" style="background-color: var(--text-light);" onclick="closeModeModal()">Abbrechen</button>
+                <button id="lblModeSave" class="btn" style="background-color: var(--success);" onclick="saveModeModal()">Speichern</button>
+            </div>
+        </div>
+    </div>
+
     
         <div id="restoreMissingModal" class="custom-modal">
         <div class="modal-content">
