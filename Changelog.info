@@ -21,3 +21,4 @@
 1.35.6 Added Button to Delete all Data
 1.35.7 Fixed Messing translation
 1.35.8 Added Time Diff in Leaderboard and fixed small issues
+1.35.9 Moved JS into own file
