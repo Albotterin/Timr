@@ -49,6 +49,8 @@
   "lblTimerBlocked": "GEBLOKKEERD",
   "lblSettingsText": "Opties",
   "lblLanguage": "🌍 Taal:",
+  "lblNoMatches": "Geen resultaten",
+"lblSearchTooltip": "Loper zoeken",
   "lblStatAvgRank": "Gem. rang:",
 "lblStatTotalMedals": "Totaal medailles:",
 "lblStatGold": "🥇 Goud:",

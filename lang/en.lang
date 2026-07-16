@@ -49,6 +49,8 @@
   "lblTimerBlocked": "BLOCKED",
   "lblSettingsText": "Options",
   "lblLanguage": "🌍 Language:",
+  "lblNoMatches": "No matches",
+"lblSearchTooltip": "Search runner",
   "lblStatAvgRank": "Ø Rank:",
 "lblStatTotalMedals": "Total Medals:",
 "lblStatGold": "🥇 Gold:",

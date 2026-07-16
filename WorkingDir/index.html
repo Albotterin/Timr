@@ -141,7 +141,7 @@
                     	
                     <div class="autocomplete-wrapper">
     <input type="text" id="runnerName" placeholder="Name..." autocomplete="off" oninput="updateLiveAutocomplete('runnerName', 'runnerDropdown')">
-    <button class="btn-search-runner" onclick="toggleAutocomplete('runnerName', 'runnerDropdown')" title="Läufer suchen">🔍</button>
+  <button id="btnSearchSingle" class="btn-search-runner" onclick="toggleAutocomplete('runnerName', 'runnerDropdown')">🔍</button>
     <div id="runnerDropdown" class="autocomplete-dropdown"></div>
 </div>
 
@@ -190,7 +190,7 @@
                       
 <div class="autocomplete-wrapper">
     <input type="text" id="groupRunnerInput" placeholder="Name..." autocomplete="off" oninput="updateLiveAutocomplete('groupRunnerInput', 'groupDropdown')">
-    <button class="btn-search-runner" onclick="toggleAutocomplete('groupRunnerInput', 'groupDropdown')" title="Läufer suchen">🔍</button>
+  <button id="btnSearchGroup" class="btn-search-runner" onclick="toggleAutocomplete('groupRunnerInput', 'groupDropdown')">🔍</button>
     <div id="groupDropdown" class="autocomplete-dropdown"></div>
 </div>
 

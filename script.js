@@ -324,6 +324,13 @@
     if (groupInput && translations['groupRunnerInputPlaceholder']) {
         groupInput.placeholder = translations['groupRunnerInputPlaceholder'];
     }
+    
+    const btnSingle = document.getElementById('btnSearchSingle');
+if (btnSingle) btnSingle.title = translations['lblSearchTooltip'] || "Läufer suchen";
+
+const btnGroup = document.getElementById('btnSearchGroup');
+if (btnGroup) btnGroup.title = translations['lblSearchTooltip'] || "Läufer suchen";
+
 
             buildEventSelectMenu();
     syncPopupRunnerName();
@@ -1857,22 +1864,22 @@ function renameCurrentEvent() {
             );
             
             if (matches.length === 0) {
-                dropdown.innerHTML = `<div class="autocomplete-item" style="color:var(--text-light); font-style:italic; cursor:default;">Keine Treffer</div>`;
+                // NEU: Sprachdatei für "Keine Treffer" wird abgefragt
+                dropdown.innerHTML = `<div class="autocomplete-item" style="color:var(--text-light); font-style:italic; cursor:default;">${translations['lblNoMatches'] || 'Keine Treffer'}</div>`;
                 return;
             }
 
             matches.forEach(fullName => {
                 const cleanName = getCleanDisplayName(fullName);
-                const iconHTML = getRunnerIconHTML(fullName); // Lädt das Icon!
+                const iconHTML = getRunnerIconHTML(fullName); 
                 
                 const div = document.createElement('div');
                 div.className = 'autocomplete-item';
                 div.style.display = 'flex';
                 div.style.alignItems = 'center';
-                // Wappen und Name werden vereint
                 div.innerHTML = `${iconHTML} <span style="margin-left: 8px;">${escapeHTML(cleanName)}</span>`;
                 div.onclick = () => {
-                    input.value = fullName; // Der volle Name inkl. [Emoji] wird übernommen
+                    input.value = fullName; 
                     dropdown.style.display = 'none';
                 };
                 dropdown.appendChild(div);

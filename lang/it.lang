@@ -49,6 +49,8 @@
   "lblTimerBlocked": "BLOCCATO",
   "lblSettingsText": "Opzioni",
   "lblLanguage": "🌍 Lingua:",
+  "lblNoMatches": "Nessun risultato",
+"lblSearchTooltip": "Cerca corridore",
   "lblStatAvgRank": "Rango medio:",
 "lblStatTotalMedals": "Totale medaglie:",
 "lblStatGold": "🥇 Oro:",
