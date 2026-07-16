@@ -768,7 +768,8 @@
                 }
 
                 let rankStr = '';
-                if (run.status === "REGULÄR" || run.status === "DNQ") {
+                // NEU: Nur noch reguläre Läufer bekommen eine Platzierung
+                if (run.status === "REGULÄR") {
                     if (currentRank === 1) rankStr = '🥇'; else if (currentRank === 2) rankStr = '🥈'; else if (currentRank === 3) rankStr = '🥉'; else rankStr = `#${currentRank}`;
                 }
 
@@ -851,12 +852,10 @@
                 function syncPopupLeaderboard() {
             if (!popupWindow || popupWindow.closed) return;
             
-            // 1. Header der Leinwand aktualisieren
             popupWindow.document.getElementById('pPopHeader').innerText = translations['lblLeaderboardTitle'] || "🏆 Bestenliste";
             const pOl = popupWindow.document.getElementById('pLeaderboard'); 
             pOl.innerHTML = "";
             
-            // 2. Aktuelle Event-Einstellungen (Modus & Zielzeit) abrufen
             const settings = getEventSettings(currentEvent);
             const mode = settings.mode;
             const targetMs = settings.targetTimeMs;
@@ -864,13 +863,11 @@
             if (runs.length === 0) {
                 pOl.innerHTML = `<li style="text-align:center;color:#7f8c8d;font-style:italic;padding-top:20px;">${translations['lblEmptyLeaderboard'] || 'Keine Läufe'}</li>`;
             } else {
-                // Bestzeit für Fastest/Slowest ermitteln
                 const bestRun = runs.find(r => r.status === "REGULÄR" || r.status === "DNQ");
                 const bestTimeMs = bestRun ? bestRun.timeMs : null;
                 let currentRank = 1;
 
                 runs.forEach((run, index) => { 
-                    // 3. Rang berechnen bei Gleichstand (Standard Competition Ranking)
                     if (index > 0) {
                         const prevRun = runs[index - 1];
                         if ((run.status === "REGULÄR" || run.status === "DNQ") && (prevRun.status === "REGULÄR" || prevRun.status === "DNQ")) {
@@ -889,12 +886,10 @@
                     const li = popupWindow.document.createElement('li'); 
                     li.className = "pop-item"; 
                     
-                    // 4. Badges (Status, Strafen, Boni)
                     let tags = (run.status !== "REGULÄR" ? `<span class="p-badge pb-s">${run.status}</span>` : '') + 
                                (run.penalties?.time > 0 ? `<span class="p-badge pb-p">+${run.penalties.time}s</span>` : '') + 
                                (run.bonuses?.time > 0 ? `<span class="p-badge pb-b">-${run.bonuses.time}s</span>` : ''); 
                     
-                    // 5. Differenzzeit berechnen
                     let diffHTML = '';
                     if ((run.status === "REGULÄR" || run.status === "DNQ")) {
                         if (mode === 'target') {
@@ -909,9 +904,9 @@
                         }
                     }
 
-                    // 6. Platzierung (Medaillen für Top 3)
                     let rankStr = '';
-                    if (run.status === "REGULÄR" || run.status === "DNQ") {
+                    // NEU: Auch in der Leinwand bekommen nur reguläre Läufe eine Platzierung
+                    if (run.status === "REGULÄR") {
                         if (currentRank === 1) rankStr = '🥇'; 
                         else if (currentRank === 2) rankStr = '🥈'; 
                         else if (currentRank === 3) rankStr = '🥉'; 
@@ -923,7 +918,6 @@
                 });
             }
             
-            // 7. Linkes Panel aktualisieren (Aktueller Lauf oder Gruppe)
             const leftPane = popupWindow.document.getElementById('pLeftPane');
             if (activeTab === 'single') { 
                 if (!popupWindow.document.getElementById('pDisplay')) { 
