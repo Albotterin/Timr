@@ -458,3 +458,40 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus { border-colo
 .time-input-group input[type=number] {
     -moz-appearance: textfield;
 }
+
+
+.runner-management-grid { display: flex; gap: 20px; max-height: 400px; }
+.runner-list-pane { width: 35%; border-right: 1px solid var(--border-color); overflow-y: auto; padding-right: 10px; }
+.runner-stat-pane { width: 65%; overflow-y: auto; padding-left: 10px; }
+.runner-list-item { padding: 10px; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+.runner-list-item:hover, .runner-list-item.active { background-color: var(--item-hover); }
+.btn-delete-runner { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; }
+
+/* CSS Balkendiagramm */
+.stat-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.stat-bar-label { width: 100px; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-light); }
+.stat-bar-wrapper { flex-grow: 1; height: 12px; background-color: var(--border-color); border-radius: 6px; overflow: hidden; position: relative; }
+.stat-bar-fill { height: 100%; background-color: var(--primary); border-radius: 6px; transition: width 0.5s ease; }
+.stat-bar-time { width: 80px; text-align: right; font-family: 'Courier New', monospace; font-size: 0.8rem; font-weight: bold; }
+
+
+/* Suchleiste */
+.runner-search {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--bg-color);
+    color: var(--text);
+}
+
+/* Stat-Cards */
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.stat-card-title { font-weight: bold; color: var(--primary); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }

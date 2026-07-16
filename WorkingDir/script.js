@@ -419,12 +419,33 @@
             if(popupWindow && !popupWindow.closed) { syncPopupRunnerName(); syncPopupNotice(); }
         }
 
-        function addRunnerToGroup() {
-            const input = document.getElementById('groupRunnerInput'); const name = input.value.trim(); 
-            if(!name) { alert(translations['lblEnterRunnerName'] || "Bitte einen Namen eingeben."); return; }
-            groupRunners.push({ id: Date.now() + Math.random(), name: name, state: 'idle', timeMs: 0, startTime: 0, elapsed: 0, status: 'REGULÄR', penalties: { count: 0, time: 0 }, bonuses: { count: 0, time: 0 } });
-            input.value = ''; renderGroupRunners(); document.getElementById('groupMassActionRow').style.display = 'block';
+                function addRunnerToGroup() {
+            const input = document.getElementById('groupRunnerInput'); 
+            const name = input.value.trim(); 
+            if(!name) { 
+                alert(translations['lblEnterRunnerName'] || "Bitte einen Namen eingeben."); 
+                return; 
+            }
+            
+            // NEU: Läufer im globalen Register speichern
+            registerRunner(name);
+
+            groupRunners.push({ 
+                id: Date.now() + Math.random(), 
+                name: name, 
+                state: 'idle', 
+                timeMs: 0, 
+                startTime: 0, 
+                elapsed: 0, 
+                status: 'REGULÄR', 
+                penalties: { count: 0, time: 0 }, 
+                bonuses: { count: 0, time: 0 } 
+            });
+            input.value = ''; 
+            renderGroupRunners(); 
+            document.getElementById('groupMassActionRow').style.display = 'block';
         }
+
 
         function startAllGroupRunners() {
             if(groupRunners.length === 0) return; const now = Date.now();
@@ -574,12 +595,34 @@
             renderGroupRunners();
         }
 
-        function saveGroupRunner(id) {
-            const r = groupRunners.find(runner => runner.id === id); if(!r) return;
-            runs.push({ id: Date.now() + Math.random(), name: r.name, timeMs: r.timeMs, timeString: (r.status === "DNF" || r.status === "DNS") ? r.status : formatTime(r.timeMs), status: r.status, penalties: r.penalties, bonuses: r.bonuses });
-            saveRunsForCurrentEvent(); sortAndDisplayRuns(); groupRunners = groupRunners.filter(runner => runner.id !== id); renderGroupRunners();
-            if(groupRunners.length === 0) { document.getElementById('groupSetupForm').style.display = 'block'; resetForm(); }
+                function saveGroupRunner(id) {
+            const r = groupRunners.find(runner => runner.id === id); 
+            if(!r) return;
+            
+            // NEU: Läufer im globalen Register speichern
+            registerRunner(r.name);
+
+            runs.push({ 
+                id: Date.now() + Math.random(), 
+                name: r.name, 
+                timeMs: r.timeMs, 
+                timeString: (r.status === "DNF" || r.status === "DNS") ? r.status : formatTime(r.timeMs), 
+                status: r.status, 
+                penalties: r.penalties, 
+                bonuses: r.bonuses 
+            });
+            
+            saveRunsForCurrentEvent(); 
+            sortAndDisplayRuns(); 
+            groupRunners = groupRunners.filter(runner => runner.id !== id); 
+            renderGroupRunners();
+            
+            if(groupRunners.length === 0) { 
+                document.getElementById('groupSetupForm').style.display = 'block'; 
+                resetForm(); 
+            }
         }
+
 
         function renderGroupRunners() {
             const container = document.getElementById('groupRunnersContainer'); container.innerHTML = '';
@@ -704,7 +747,33 @@
         function handleTimeAdjustment(mode, secs) { if (currentStatus !== "REGULÄR") return; if (mode === 'penalty') { penaltyCount++; penaltyTime += secs; currentTotalMs += (secs*1000); elapsedBeforePause += (secs*1000); if(isRunning) startTime -= (secs*1000); } else { bonusCount++; bonusTime += secs; currentTotalMs -= (secs*1000); elapsedBeforePause -= (secs*1000); if(isRunning) startTime += (secs*1000); } if (currentTotalMs < 0) { currentTotalMs = 0; elapsedBeforePause = 0; if(isRunning) startTime = Date.now(); } document.getElementById('display').innerText = formatTime(currentTotalMs); syncPopupTime(formatTime(currentTotalMs)); updateAdjustmentNoticeDisplay(); }
         function handleStatusSet(s) { if (lockedEvents.includes(currentEvent)) return; if (!document.getElementById('runnerName').value.trim()) { alert(translations['lblEnterRunnerName'] || "Name fehlt."); return; } currentStatus = s; if (s !== "REGULÄR") { isRunning = false; clearInterval(timerInterval); if (s === "DNF" || s === "DNS") { currentTotalMs = 0; elapsedBeforePause = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; document.getElementById('display').innerText = "--:--:--.--"; syncPopupTime(s); } document.getElementById('startBtn').disabled = true; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = false; document.getElementById('runnerName').disabled = true; } updateAdjustmentNoticeDisplay(); }
         function updateAdjustmentNoticeDisplay() { const n = document.getElementById('adjustmentNotice'); if (currentStatus !== "REGULÄR") { n.innerText = `Status: ${currentStatus}`; n.className = "adjustment-display status-info"; } else { let t = ""; if (penaltyTime > 0) t += `+${penaltyTime}s`; if (bonusTime > 0) t += ` -${bonusTime}s`; n.innerText = t.trim(); n.className = `adjustment-display ${penaltyTime >= bonusTime ? 'penalty' : 'bonus'}`; } syncPopupNotice(); }
-        function saveRun() { if (lockedEvents.includes(currentEvent)) return; if(!document.getElementById('runnerName').value.trim()) return; runs.push({ id: Date.now(), name: document.getElementById('runnerName').value.trim(), timeMs: currentTotalMs, timeString: (currentStatus === "DNF" || currentStatus === "DNS") ? currentStatus : formatTime(currentTotalMs), status: currentStatus, penalties: { count: penaltyCount, time: penaltyTime }, bonuses: { count: bonusCount, time: bonusTime } }); saveRunsForCurrentEvent(); sortAndDisplayRuns(); resetForm(); }
+        
+
+                function saveRun() {
+            const runnerName = document.getElementById('runnerName').value.trim();
+            if (!runnerName) {
+                alert(translations['lblEnterRunnerName'] || "Bitte Läufernamen eingeben.");
+                return;
+            }
+
+            // NEU: Läufer im globalen Register speichern
+            registerRunner(runnerName);
+
+            runs.push({
+                id: Date.now() + Math.random(),
+                name: runnerName,
+                timeMs: currentTotalMs,
+                timeString: (currentStatus === "DNF" || currentStatus === "DNS") ? currentStatus : formatTime(currentTotalMs),
+                status: currentStatus,
+                penalties: { count: penaltyCount, time: penaltyTime },
+                bonuses: { count: bonusCount, time: bonusTime }
+            });
+            
+            saveRunsForCurrentEvent();
+            sortAndDisplayRuns();
+            resetForm();
+        }
+
         function resetForm() { isRunning = false; isPaused = false; clearInterval(timerInterval); elapsedBeforePause = 0; currentTotalMs = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; currentStatus = "REGULÄR"; const isLocked = lockedEvents.includes(currentEvent); document.getElementById('timingCard').style.display = isLocked ? 'none' : 'block'; document.getElementById('runnerName').value = ""; document.getElementById('runnerName').disabled = isLocked; document.getElementById('display').innerText = "00:00:00.00"; document.getElementById('adjustmentNotice').innerText = ""; document.getElementById('startBtn').disabled = isLocked; document.getElementById('startBtn').innerText = translations['lblStartBtn'] || "Start"; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = true; document.getElementById('statusBtnDNS').disabled = isLocked; document.getElementById('statusBtnDNF').disabled = isLocked; document.getElementById('statusBtnDNQ').disabled = true; document.getElementById('addPenaltyTypeBtn').disabled = isLocked; document.getElementById('addBonusTypeBtn').disabled = isLocked; renderCustomButtons('penalty'); renderCustomButtons('bonus'); groupRunners = []; renderGroupRunners(); document.getElementById('groupSetupForm').style.display = 'block'; document.getElementById('groupMassActionRow').style.display = 'none'; syncPopupRunnerName(); syncPopupTime(isLocked ? (translations['lblTimerBlocked'] || "GEBLOCKT") : "00:00:00.00"); syncPopupNotice(); }
 
          // Hilfsfunktion zum Auslesen der Event-Einstellungen
@@ -1378,4 +1447,138 @@ function renameCurrentEvent() {
                 ms = secParts.length > 1 ? parseInt((secParts[1] + "00").substring(0, 2)) * 10 : 0;
             }
             return (h * 3600000) + (m * 60000) + (s * 1000) + ms;
+        }
+
+        
+                // --- LÄUFERVERWALTUNG & STATISTIKEN ---
+        let runnerRegistry = JSON.parse(localStorage.getItem('runnerRegistry')) || [];
+
+        function registerRunner(name) {
+            if (!name) return;
+            const cleanName = getCleanDisplayName(name);
+            if (!runnerRegistry.includes(cleanName)) {
+                runnerRegistry.push(cleanName);
+                runnerRegistry.sort((a, b) => a.localeCompare(b));
+                localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
+                updateRunnerDatalist();
+            }
+        }
+
+        function updateRunnerDatalist() {
+            const dl = document.getElementById('registeredRunnersList');
+            if (!dl) return;
+            dl.innerHTML = '';
+            runnerRegistry.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                dl.appendChild(opt);
+            });
+        }
+        // Initiale Befüllung beim Start
+        updateRunnerDatalist();
+
+        // -> WICHTIG: Erweitert Eure bestehende saveRun() Funktion!
+        // Fügt dort direkt nach dem Auslesen des Namens "registerRunner(runnerName);" ein.
+        // Falls Ihr eine saveGroupRuns() habt, dort ebenfalls "registerRunner(r.name);" für jeden Läufer einbauen.
+
+        function openRunnerManagementModal() {
+            renderRunnerManagementList();
+            document.getElementById('rmRunnerStats').innerHTML = '<div style="color:var(--text-light); text-align:center; margin-top:20px;">Wählt einen Läufer aus.</div>';
+            document.getElementById('runnerManagementModal').style.display = 'flex';
+        }
+
+        function closeRunnerManagementModal() { document.getElementById('runnerManagementModal').style.display = 'none'; }
+
+        function filterRunners() {
+            const query = document.getElementById('runnerSearch').value.toLowerCase();
+            const list = document.getElementById('rmRunnerList');
+            const items = list.querySelectorAll('.runner-list-item');
+            items.forEach(item => {
+                const name = item.innerText.toLowerCase();
+                item.style.display = name.includes(query) ? 'flex' : 'none';
+            });
+        }
+
+        function renderRunnerManagementList() {
+            const listEl = document.getElementById('rmRunnerList');
+            listEl.innerHTML = '';
+            runnerRegistry.forEach(runnerName => {
+                const div = document.createElement('div');
+                div.className = 'runner-list-item';
+                div.innerHTML = `<span>${escapeHTML(runnerName)}</span> 
+                                 <button class="btn-delete-runner" onclick="tryDeleteRunner(event, '${escapeHTML(runnerName)}')">🗑️</button>`;
+                div.onclick = () => {
+                    document.querySelectorAll('.runner-list-item').forEach(i => i.classList.remove('active'));
+                    div.classList.add('active');
+                    renderRunnerStats(runnerName);
+                };
+                listEl.appendChild(div);
+            });
+        }
+
+        function getRunnerTotalStats(runnerName) {
+            let allRuns = [];
+            eventList.forEach(ev => {
+                const evRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${ev}`)) || [];
+                evRuns.forEach(r => {
+                    if (getCleanDisplayName(r.name) === runnerName) {
+                        allRuns.push({ event: ev, timeMs: r.timeMs, timeString: r.timeString, status: r.status });
+                    }
+                });
+            });
+            return allRuns;
+        }
+
+        function renderRunnerStats(runnerName) {
+            const statsPane = document.getElementById('rmRunnerStats');
+            const runs = getRunnerTotalStats(runnerName);
+            const validRuns = runs.filter(r => r.status === "REGULÄR");
+            
+            let bestTimeMs = validRuns.length > 0 ? Math.min(...validRuns.map(r => r.timeMs)) : null;
+
+            let html = `<h4 style="margin-top:0; color:var(--primary);">${escapeHTML(runnerName)}</h4>`;
+            
+            // Karte 1: Quick Facts
+            html += `<div class="stat-card">
+                        <div class="stat-card-title">Überblick</div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span>${translations['lblStatTotalRuns'] || 'Gesamt:'} <b>${runs.length}</b></span>
+                            <span>${translations['lblStatBestTime'] || 'Bestzeit:'} <b>${bestTimeMs ? formatTime(bestTimeMs) : '-'}</b></span>
+                        </div>
+                     </div>`;
+
+            // Karte 2: Verlauf
+            if (validRuns.length > 0) {
+                html += `<div class="stat-card">
+                            <div class="stat-card-title">${translations['lblStatChartTitle'] || 'Leistungsverlauf'}</div>`;
+                const maxTimeMs = Math.max(...validRuns.map(r => r.timeMs));
+                validRuns.forEach(r => {
+                    const pct = (r.timeMs / maxTimeMs) * 100;
+                    html += `
+                        <div class="stat-bar-row">
+                            <div class="stat-bar-label">${escapeHTML(r.event)}</div>
+                            <div class="stat-bar-wrapper"><div class="stat-bar-fill" style="width: ${pct}%;"></div></div>
+                            <div class="stat-bar-time">${r.timeString}</div>
+                        </div>`;
+                });
+                html += `</div>`;
+            }
+
+            statsPane.innerHTML = html;
+        }
+
+        function tryDeleteRunner(e, runnerName) {
+            e.stopPropagation();
+            const runs = getRunnerTotalStats(runnerName);
+            if (runs.length > 0) {
+                alert(translations['lblRunnerInUseError'] || "Dieser Läufer ist noch in Events aktiv und kann nicht gelöscht werden.");
+                return;
+            }
+            if (confirm(translations['lblRunnerDeleteConfirm'] || "Diesen Läufer wirklich aus der Datenbank entfernen?")) {
+                runnerRegistry = runnerRegistry.filter(n => n !== runnerName);
+                localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
+                updateRunnerDatalist();
+                renderRunnerManagementList();
+                document.getElementById('rmRunnerStats').innerHTML = '<div style="color:var(--text-light); text-align:center; margin-top:20px;">Wählt einen Läufer aus.</div>';
+            }
         }

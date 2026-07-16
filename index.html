@@ -16,6 +16,10 @@
         	      <div class="dropdown">
                 <button class="theme-toggle-btn">📋 <span id="lblMenuText">Menü</span></button>
                 <div class="dropdown-content">
+                	                    <button onclick="openRunnerManagementModal()" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 5px; padding-bottom: 10px;">
+                        <span>🏃</span> <span id="lblMenuRunners">Läufer verwalten</span>
+                    </button>
+
                     <button onclick="openTrashModal()" style="display: flex; align-items: center; gap: 8px;">
                         <span>🗑️</span> <span id="lblTrashText">Papierkorb</span>
                     </button>
@@ -133,7 +137,8 @@
             <div id="tabSingleContent" class="tab-content active">
                 <div class="form-group">
                     <label id="lblRunnerName" for="runnerName">Name des Läufers:</label>
-                    <input type="text" id="runnerName" placeholder="z.B. Max Mustermann" autocomplete="off" oninput="syncPopupRunnerName()">
+                                 <input type="text" id="runnerName" placeholder="Name..." autocomplete="off" list="registeredRunnersList">
+                <datalist id="registeredRunnersList"></datalist>
                 </div>
 
                 <div class="stopwatch-display" id="display">00:00:00.00</div>
@@ -393,6 +398,26 @@
             <div class="modal-actions">
                 <button id="lblRestoreMissingCancel" class="btn" style="background-color: var(--text-light);" onclick="closeRestoreMissingModal()">Abbrechen</button>
                 <button id="lblRestoreMissingSubmit" class="btn" style="background-color: var(--success);" onclick="submitRestoreMissing()">Wiederherstellen</button>
+            </div>
+        </div>
+    </div>
+    
+    
+    <div id="runnerManagementModal" class="custom-modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <h3 id="lblRunnerModalTitle" style="margin-top:0; color: var(--primary);">🏃 Läuferverwaltung</h3>
+            <div class="runner-management-grid">
+   <div class="runner-list-pane">
+    <input type="text" id="runnerSearch" class="runner-search" placeholder="Läufer suchen..." onkeyup="filterRunners()">
+    <div id="rmRunnerList"></div>
+</div>
+
+                <div class="runner-stat-pane" id="rmRunnerStats">
+                    <div style="color:var(--text-light); text-align:center; margin-top:20px;">Wählt einen Läufer aus.</div>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top:20px;">
+                <button class="btn" style="background-color: var(--accent);" onclick="closeRunnerManagementModal()">Schließen</button>
             </div>
         </div>
     </div>
