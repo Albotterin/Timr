@@ -635,17 +635,36 @@
         function toggleLockCurrentEvent() { if (isRunning || groupRunners.length > 0) { alert(translations['lblTabSwitchBlock'] || "Blockiert während Messung."); return; } if(lockedEvents.includes(currentEvent)) lockedEvents = lockedEvents.filter(e => e !== currentEvent); else lockedEvents.push(currentEvent); localStorage.setItem('runnerLockedEvents', JSON.stringify(lockedEvents)); buildEventSelectMenu(); resetForm(); }
         
         
-       function updateLockBtnStyle() {
-    const span = document.getElementById('lblEventActionLock');
-    if (!span) return;
-    
-    const isLocked = lockedEvents.includes(currentEvent);
-    if (isLocked) {
-        span.innerText = translations['lblEventActionUnlock'] || "🔓 Entsperren";
-    } else {
-        span.innerText = translations['lblEventActionLock'] || "🔒 Sperren";
-    }
-}
+               function updateLockBtnStyle() {
+            const span = document.getElementById('lblEventActionLock');
+            const isLocked = lockedEvents.includes(currentEvent);
+            
+            if (span) {
+                span.innerText = isLocked ? (translations['lblEventActionUnlock'] || "🔓 Entsperren") : (translations['lblEventActionLock'] || "🔒 Sperren");
+            }
+
+            // 1. Die Karte mit der Einzel-Zeitmessung automatisch finden und steuern
+            const runnerInput = document.getElementById('runnerName');
+            if (runnerInput) {
+                const singleTimingCard = runnerInput.closest('.card');
+                if (singleTimingCard) singleTimingCard.style.display = isLocked ? 'none' : '';
+            }
+
+            // 2. Die Karte mit der Gruppen-Zeitmessung automatisch finden und steuern
+            const groupInput = document.getElementById('groupRunnerInput');
+            if (groupInput) {
+                const groupTimingCard = groupInput.closest('.card');
+                if (groupTimingCard) groupTimingCard.style.display = isLocked ? 'none' : '';
+            }
+
+            // 3. Die Tab-Navigation (falls vorhanden) ebenfalls steuern
+            const tabs = document.querySelector('.tab-container') || document.querySelector('.tabs');
+            if (tabs) {
+                const tabCard = tabs.closest('.card') || tabs;
+                tabCard.style.display = isLocked ? 'none' : '';
+            }
+        }
+
 
         
         function loadRunsForCurrentEvent() { runs = JSON.parse(localStorage.getItem(`runnerLeaderboard_${currentEvent}`)) || []; sortAndDisplayRuns(); }
