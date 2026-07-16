@@ -1670,13 +1670,19 @@ function renameCurrentEvent() {
         }
 
 
-            function renderRunnerStats(fullName) {
-            const cleanName = getCleanDisplayName(fullName); // Für Abfragen den reinen Namen extrahieren
+                    function renderRunnerStats(fullName) {
+            const cleanName = getCleanDisplayName(fullName);
             const statsPane = document.getElementById('rmRunnerStats');
             const runs = getRunnerTotalStats(cleanName);
             const validRuns = runs.filter(r => r.status === "REGULÄR");
             
             let bestTimeMs = validRuns.length > 0 ? Math.min(...validRuns.map(r => r.timeMs)) : null;
+            
+            // NEU: Die gesamte gelaufene Zeit berechnen
+            let totalTimeMs = 0;
+            validRuns.forEach(r => {
+                totalTimeMs += r.timeMs;
+            });
 
             let gold = 0, silver = 0, bronze = 0, dns = 0, dnf = 0, dnq = 0, rankSum = 0, rankCount = 0;
             runs.forEach(r => {
@@ -1688,22 +1694,30 @@ function renameCurrentEvent() {
             const totalMedals = gold + silver + bronze;
             const avgRank = rankCount > 0 ? (rankSum / rankCount).toFixed(1) : '-';
 
-            // NEU: Das Wappen (Emoji) prangt majestätisch neben dem Titel!
             let html = `<h4 style="margin-top:0; color:var(--primary); font-size: 1.4rem; display:flex; align-items:center;">
                             ${getRunnerIconHTML(fullName)} <span style="margin-left:8px;">${escapeHTML(cleanName)}</span>
                         </h4>`;
             
+            // Das Grid wurde um die Gesamtzeit erweitert und optisch ausbalanciert
             html += `<div class="stat-card">
                         <div class="stat-card-title">${translations['lblOverview'] || 'Überblick'}</div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem;">
                             <div>${translations['lblStatTotalRuns'] || 'Gesamtläufe:'} <b>${runs.length}</b></div>
+                            <div>${translations['lblStatTotalTime'] || 'Gesamtzeit:'} <b>${totalTimeMs > 0 ? formatTime(totalTimeMs) : '-'}</b></div>
+                            
                             <div>${translations['lblStatBestTime'] || 'Bestzeit:'} <b>${bestTimeMs ? formatTime(bestTimeMs) : '-'}</b></div>
-                            <div style="border-top: 1px solid var(--border-color); padding-top: 8px;">${translations['lblStatAvgRank'] || 'Ø Platzierung:'} <b>${avgRank}</b></div>
-                            <div style="border-top: 1px solid var(--border-color); padding-top: 8px;">${translations['lblStatTotalMedals'] || 'Medaillen gesamt:'} <b>${totalMedals}</b></div>
+                            <div>${translations['lblStatAvgRank'] || 'Ø Platzierung:'} <b>${avgRank}</b></div>
+                            
+                            <div style="border-top: 1px solid var(--border-color); padding-top: 8px; grid-column: 1 / -1;">
+                                ${translations['lblStatTotalMedals'] || 'Medaillen gesamt:'} <b>${totalMedals}</b>
+                            </div>
+                            
                             <div>${translations['lblStatGold'] || '🥇 Gold:'} <b>${gold}</b></div>
                             <div>${translations['lblStatDNS'] || 'DNS:'} <b>${dns}</b></div>
+                            
                             <div>${translations['lblStatSilver'] || '🥈 Silber:'} <b>${silver}</b></div>
                             <div>${translations['lblStatDNF'] || 'DNF:'} <b>${dnf}</b></div>
+                            
                             <div>${translations['lblStatBronze'] || '🥉 Bronze:'} <b>${bronze}</b></div>
                             <div>${translations['lblStatDNQ'] || 'DNQ:'} <b>${dnq}</b></div>
                         </div>
@@ -1732,6 +1746,7 @@ function renameCurrentEvent() {
                 });
             }
         }
+
 
 
 

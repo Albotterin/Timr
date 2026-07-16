@@ -60,6 +60,7 @@
   "lblErrorRestoreEventExists": "Já existe um evento com este nome. Por favor, exclua ou renomeie.",
   "lblErrorRestoreNoEvent": "O evento associado não existe. Por favor, restaure o evento primeiro.",
   "lblLanguage": "🌍 Idioma:",
+  "lblStatTotalTime": "Tempo total:",
   "lblNoMatches": "Sem resultados",
 "lblSearchTooltip": "Pesquisar corredor",
   "lblStatAvgRank": "Rango médio:",

@@ -49,6 +49,7 @@
   "lblTimerBlocked": "BLOQUÉ",
   "lblSettingsText": "Options",
   "lblLanguage": "🌍 Langue :",
+  "lblStatTotalTime": "Temps total :",
   "lblNoMatches": "Aucun résultat",
 "lblSearchTooltip": "Rechercher un coureur",
   "lblStatAvgRank": "Rang moyen :",
