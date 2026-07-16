@@ -878,16 +878,46 @@
         }
         function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
         function toggleEditTimeField() { document.getElementById('editTimeGroup').style.display = (document.getElementById('editStatus').value === "DNF" || document.getElementById('editStatus').value === "DNS") ? 'none' : 'flex'; }
-        function submitEditRun() {
-            const id = parseFloat(document.getElementById('editRunId').value); const index = runs.findIndex(r => r.id === id); if (index === -1) return;
+        
+                function submitEditRun() {
+            const id = parseFloat(document.getElementById('editRunId').value); 
+            const index = runs.findIndex(r => r.id === id); 
+            if (index === -1) return;
+            
+            // NEU: Den Namen in einer Variable speichern und in die DB aufnehmen (Migration)
+            const editedName = document.getElementById('editRunnerName').value.trim() || "Unbekannt";
+            if (editedName !== "Unbekannt") {
+                registerRunner(editedName);
+            }
+
             const stat = document.getElementById('editStatus').value; let timeMs = 0;
             let pCount = parseInt(document.getElementById('editPenaltyCount').value, 10) || 0; let pTime = parseInt(document.getElementById('editPenaltyTime').value, 10) || 0;
             let bCount = parseInt(document.getElementById('editBonusCount').value, 10) || 0; let bTime = parseInt(document.getElementById('editBonusTime').value, 10) || 0;
-            if (stat !== "DNF" && stat !== "DNS") timeMs = (parseInt(document.getElementById('editHours').value, 10)||0)*3600000 + (parseInt(document.getElementById('editMinutes').value, 10)||0)*60000 + (parseInt(document.getElementById('editSeconds').value, 10)||0)*1000 + (parseInt(document.getElementById('editHundredths').value, 10)||0)*10;
-            else { pCount = 0; pTime = 0; bCount = 0; bTime = 0; }
-            runs[index] = { id: id, name: document.getElementById('editRunnerName').value.trim()||"Unbekannt", status: stat, timeMs: timeMs, timeString: (stat==="DNF"||stat==="DNS")?stat:formatTime(timeMs), penalties: { count: pCount, time: pTime }, bonuses: { count: bCount, time: bTime } };
-            saveRunsForCurrentEvent(); sortAndDisplayRuns(); closeEditModal();
+            
+            if (stat !== "DNF" && stat !== "DNS") {
+                timeMs = (parseInt(document.getElementById('editHours').value, 10)||0)*3600000 + (parseInt(document.getElementById('editMinutes').value, 10)||0)*60000 + (parseInt(document.getElementById('editSeconds').value, 10)||0)*1000 + (parseInt(document.getElementById('editHundredths').value, 10)||0)*10;
+            } else { 
+                pCount = 0; pTime = 0; bCount = 0; bTime = 0; 
+            }
+            
+            // HIER den bereits ausgelesenen 'editedName' verwenden
+            runs[index] = { 
+                id: id, 
+                name: editedName, 
+                status: stat, 
+                timeMs: timeMs, 
+                timeString: (stat==="DNF"||stat==="DNS") ? stat : formatTime(timeMs), 
+                penalties: { count: pCount, time: pTime }, 
+                bonuses: { count: bCount, time: bTime } 
+            };
+            
+            saveRunsForCurrentEvent(); 
+            sortAndDisplayRuns(); 
+            
+            closeEditModal();
         }
+
+        
 
         function exportJSONData() { 
             if (runs.length === 0) return;
@@ -1655,3 +1685,28 @@ function renameCurrentEvent() {
                 document.getElementById('rmRunnerStats').innerHTML = '<div style="color:var(--text-light); text-align:center; margin-top:20px;">Wählt einen Läufer aus.</div>';
             }
         }
+        
+        function migrateAllOldRunners() {
+        	//To add all non existing runners to StatsDB
+    let addedCount = 0;
+    eventList.forEach(ev => {
+        const evRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${ev}`)) || [];
+        evRuns.forEach(r => {
+            const cleanName = getCleanDisplayName(r.name);
+            if (cleanName && !runnerRegistry.includes(cleanName)) {
+                runnerRegistry.push(cleanName);
+                addedCount++;
+            }
+        });
+    });
+    
+    if (addedCount > 0) {
+        runnerRegistry.sort((a, b) => a.localeCompare(b));
+        localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
+        updateRunnerDatalist();
+        alert(`Migration abgeschlossen! ${addedCount} alte Läufer wurden in die neue Datenbank importiert.`);
+    } else {
+        alert("Alle Läufer sind bereits in der Datenbank.");
+    }
+}
+
