@@ -1481,11 +1481,16 @@ function renameCurrentEvent() {
         // Fügt dort direkt nach dem Auslesen des Namens "registerRunner(runnerName);" ein.
         // Falls Ihr eine saveGroupRuns() habt, dort ebenfalls "registerRunner(r.name);" für jeden Läufer einbauen.
 
-        function openRunnerManagementModal() {
+                function openRunnerManagementModal() {
+            // Sprach-Texte setzen
+            document.getElementById('runnerSearch').placeholder = translations['lblRunnerSearchPlaceholder'] || "Läufer suchen...";
+            document.getElementById('lblRunnerCloseBtn').innerText = translations['lblClose'] || "Schließen";
+
             renderRunnerManagementList();
-            document.getElementById('rmRunnerStats').innerHTML = '<div style="color:var(--text-light); text-align:center; margin-top:20px;">Wählt einen Läufer aus.</div>';
+            document.getElementById('rmRunnerStats').innerHTML = `<div style="color:var(--text-light); text-align:center; margin-top:20px;">${translations['lblSelectRunner'] || 'Wählt einen Läufer aus.'}</div>`;
             document.getElementById('runnerManagementModal').style.display = 'flex';
         }
+
 
         function closeRunnerManagementModal() { document.getElementById('runnerManagementModal').style.display = 'none'; }
 
@@ -1506,7 +1511,7 @@ function renameCurrentEvent() {
                 const div = document.createElement('div');
                 div.className = 'runner-list-item';
                 div.innerHTML = `<span>${escapeHTML(runnerName)}</span> 
-                                 <button class="btn-delete-runner" onclick="tryDeleteRunner(event, '${escapeHTML(runnerName)}')">🗑️</button>`;
+                                 <button class="btn-delete-runner" title="${translations['lblActionDelete'] || 'Löschen'}" onclick="tryDeleteRunner(event, '${escapeHTML(runnerName)}')">🗑️</button>`;
                 div.onclick = () => {
                     document.querySelectorAll('.runner-list-item').forEach(i => i.classList.remove('active'));
                     div.classList.add('active');
@@ -1540,7 +1545,7 @@ function renameCurrentEvent() {
             
             // Karte 1: Quick Facts
             html += `<div class="stat-card">
-                        <div class="stat-card-title">Überblick</div>
+                        <div class="stat-card-title">${translations['lblOverview'] || 'Überblick'}</div>
                         <div style="display:flex; justify-content:space-between;">
                             <span>${translations['lblStatTotalRuns'] || 'Gesamt:'} <b>${runs.length}</b></span>
                             <span>${translations['lblStatBestTime'] || 'Bestzeit:'} <b>${bestTimeMs ? formatTime(bestTimeMs) : '-'}</b></span>
@@ -1550,7 +1555,7 @@ function renameCurrentEvent() {
             // Karte 2: Verlauf
             if (validRuns.length > 0) {
                 html += `<div class="stat-card">
-                            <div class="stat-card-title">${translations['lblStatChartTitle'] || 'Leistungsverlauf'}</div>`;
+                            <div class="stat-card-title">${translations['lblPerformanceChart'] || 'Leistungsverlauf'}</div>`;
                 const maxTimeMs = Math.max(...validRuns.map(r => r.timeMs));
                 validRuns.forEach(r => {
                     const pct = (r.timeMs / maxTimeMs) * 100;
@@ -1562,6 +1567,8 @@ function renameCurrentEvent() {
                         </div>`;
                 });
                 html += `</div>`;
+            } else {
+                html += `<div style="color:var(--text-light); font-style:italic; font-size:0.9rem;">${translations['lblNoStatsAvailable'] || 'Keine regulären Laufzeiten für Grafiken vorhanden.'}</div>`;
             }
 
             statsPane.innerHTML = html;

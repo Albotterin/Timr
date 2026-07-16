@@ -407,8 +407,8 @@
         <div class="modal-content" style="max-width: 700px;">
             <h3 id="lblRunnerModalTitle" style="margin-top:0; color: var(--primary);">🏃 Läuferverwaltung</h3>
             <div class="runner-management-grid">
-   <div class="runner-list-pane">
-    <input type="text" id="runnerSearch" class="runner-search" placeholder="Läufer suchen..." onkeyup="filterRunners()">
+<div class="runner-list-pane">
+    <input type="text" id="runnerSearch" class="runner-search" placeholder="..."> 
     <div id="rmRunnerList"></div>
 </div>
 
@@ -416,9 +416,9 @@
                     <div style="color:var(--text-light); text-align:center; margin-top:20px;">Wählt einen Läufer aus.</div>
                 </div>
             </div>
-            <div class="modal-actions" style="margin-top:20px;">
-                <button class="btn" style="background-color: var(--accent);" onclick="closeRunnerManagementModal()">Schließen</button>
-            </div>
+        <div class="modal-actions" style="margin-top:20px;">
+    <button id="lblRunnerCloseBtn" class="btn" style="background-color: var(--accent);" onclick="closeRunnerManagementModal()">Schließen</button>
+</div>
         </div>
     </div>
 
