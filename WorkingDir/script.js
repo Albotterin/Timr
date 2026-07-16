@@ -1565,34 +1565,111 @@ function renameCurrentEvent() {
             });
         }
 
-        function getRunnerTotalStats(runnerName) {
+                function getRunnerTotalStats(runnerName) {
             let allRuns = [];
             eventList.forEach(ev => {
                 const evRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${ev}`)) || [];
-                evRuns.forEach(r => {
-                    if (getCleanDisplayName(r.name) === runnerName) {
-                        allRuns.push({ event: ev, timeMs: r.timeMs, timeString: r.timeString, status: r.status });
+                if (evRuns.length === 0) return;
+
+                // Event-Einstellungen für die korrekte Sortierung abrufen
+                const settings = getEventSettings(ev);
+                const mode = settings.mode;
+                const targetMs = settings.targetTimeMs;
+
+                // Läufe exakt so sortieren wie in der Bestenliste
+                evRuns.sort((a, b) => { 
+                    const ord = { "REGULÄR": 1, "DNQ": 2, "DNF": 3, "DNS": 4 }; 
+                    if (ord[a.status] !== ord[b.status]) return ord[a.status] - ord[b.status]; 
+                    
+                    if (a.status === "REGULÄR" || a.status === "DNQ") {
+                        if (mode === 'fastest') return a.timeMs - b.timeMs;
+                        if (mode === 'slowest') return b.timeMs - a.timeMs;
+                        if (mode === 'target') return Math.abs(a.timeMs - targetMs) - Math.abs(b.timeMs - targetMs);
+                    }
+                    return a.name.localeCompare(b.name); 
+                });
+
+                let currentRank = 1;
+                evRuns.forEach((run, index) => {
+                    // Rangfolge berechnen (Gleichstand berücksichtigen)
+                    if (index > 0) {
+                        const prevRun = evRuns[index - 1];
+                        if ((run.status === "REGULÄR" || run.status === "DNQ") && (prevRun.status === "REGULÄR" || prevRun.status === "DNQ")) {
+                            let isSameRank = false;
+                            if (mode === 'target') isSameRank = Math.abs(run.timeMs - targetMs) === Math.abs(prevRun.timeMs - targetMs);
+                            else isSameRank = run.timeMs === prevRun.timeMs;
+                            if (!isSameRank) currentRank = index + 1;
+                        } else if (run.status !== "REGULÄR" && run.status !== "DNQ") { 
+                            currentRank = index + 1; 
+                        }
+                    }
+
+                    if (getCleanDisplayName(run.name) === runnerName) {
+                        allRuns.push({ 
+                            event: ev, 
+                            timeMs: run.timeMs, 
+                            timeString: run.timeString, 
+                            status: run.status,
+                            // Nur reguläre Läufe erhalten eine offizielle Platzierung (Medaille/Schnitt)
+                            rank: (run.status === "REGULÄR") ? currentRank : null
+                        });
                     }
                 });
             });
             return allRuns;
         }
 
-                function renderRunnerStats(runnerName) {
+
+            function renderRunnerStats(runnerName) {
             const statsPane = document.getElementById('rmRunnerStats');
             const runs = getRunnerTotalStats(runnerName);
             const validRuns = runs.filter(r => r.status === "REGULÄR");
             
             let bestTimeMs = validRuns.length > 0 ? Math.min(...validRuns.map(r => r.timeMs)) : null;
 
+            // Neue Statistik-Zähler
+            let gold = 0, silver = 0, bronze = 0;
+            let dns = 0, dnf = 0, dnq = 0;
+            let rankSum = 0, rankCount = 0;
+
+            runs.forEach(r => {
+                if (r.rank === 1) gold++;
+                if (r.rank === 2) silver++;
+                if (r.rank === 3) bronze++;
+                
+                if (r.rank !== null) {
+                    rankSum += r.rank;
+                    rankCount++;
+                }
+
+                if (r.status === "DNS") dns++;
+                if (r.status === "DNF") dnf++;
+                if (r.status === "DNQ") dnq++;
+            });
+
+            const totalMedals = gold + silver + bronze;
+            const avgRank = rankCount > 0 ? (rankSum / rankCount).toFixed(1) : '-';
+
             let html = `<h4 style="margin-top:0; color:var(--primary); font-size: 1.4rem;">${escapeHTML(runnerName)}</h4>`;
             
-            // Karte 1: Quick Facts
+            // Karte 1: Quick Facts (Neues zweispaltiges Grid-Layout)
             html += `<div class="stat-card">
                         <div class="stat-card-title">${translations['lblOverview'] || 'Überblick'}</div>
-                        <div style="display:flex; justify-content:space-between; font-size: 1.1rem;">
-                            <span>${translations['lblStatTotalRuns'] || 'Gesamt:'} <b>${runs.length}</b></span>
-                            <span>${translations['lblStatBestTime'] || 'Bestzeit:'} <b>${bestTimeMs ? formatTime(bestTimeMs) : '-'}</b></span>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem;">
+                            <div>${translations['lblStatTotalRuns'] || 'Gesamtläufe:'} <b>${runs.length}</b></div>
+                            <div>${translations['lblStatBestTime'] || 'Bestzeit:'} <b>${bestTimeMs ? formatTime(bestTimeMs) : '-'}</b></div>
+                            
+                            <div style="border-top: 1px solid var(--border-color); padding-top: 8px;">${translations['lblStatAvgRank'] || 'Ø Platzierung:'} <b>${avgRank}</b></div>
+                            <div style="border-top: 1px solid var(--border-color); padding-top: 8px;">${translations['lblStatTotalMedals'] || 'Medaillen gesamt:'} <b>${totalMedals}</b></div>
+                            
+                            <div>${translations['lblStatGold'] || '🥇 Gold:'} <b>${gold}</b></div>
+                            <div>${translations['lblStatDNS'] || 'DNS:'} <b>${dns}</b></div>
+                            
+                            <div>${translations['lblStatSilver'] || '🥈 Silber:'} <b>${silver}</b></div>
+                            <div>${translations['lblStatDNF'] || 'DNF:'} <b>${dnf}</b></div>
+                            
+                            <div>${translations['lblStatBronze'] || '🥉 Bronze:'} <b>${bronze}</b></div>
+                            <div>${translations['lblStatDNQ'] || 'DNQ:'} <b>${dnq}</b></div>
                         </div>
                      </div>`;
 
@@ -1610,76 +1687,36 @@ function renameCurrentEvent() {
 
             statsPane.innerHTML = html;
 
-            // Chart.js Diagramm initialisieren, falls Daten vorhanden sind
+            // Chart.js Diagramm initialisieren (identisch zur vorherigen Version)
             if (validRuns.length > 0) {
                 const ctx = document.getElementById('runnerPerformanceChart').getContext('2d');
-                
-                // Altes Diagramm zerstören, um Überlappungen zu vermeiden
-                if (runnerChartInstance) {
-                    runnerChartInstance.destroy();
-                }
+                if (runnerChartInstance) runnerChartInstance.destroy();
 
-                // Daten für das Diagramm aufbereiten
                 const labels = validRuns.map(r => r.event);
-                const dataPts = validRuns.map(r => r.timeMs); // Rohdaten in Millisekunden
-
-                // Farben aus Eurem CSS auslesen für nahtloses Design
+                const dataPts = validRuns.map(r => r.timeMs);
                 const rootStyle = getComputedStyle(document.documentElement);
                 const primaryColor = rootStyle.getPropertyValue('--primary').trim() || '#3498db';
                 const textColor = rootStyle.getPropertyValue('--text-light').trim() || '#7f8c8d';
                 const gridColor = rootStyle.getPropertyValue('--border-color').trim() || '#e0e0e0';
 
                 runnerChartInstance = new Chart(ctx, {
-                    type: 'line', // Eine elegante Kurve
+                    type: 'line',
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Laufzeit',
-                            data: dataPts,
-                            borderColor: primaryColor,
-                            backgroundColor: primaryColor + '33', // 20% Transparenz für die Füllung unter der Kurve
-                            borderWidth: 2,
-                            pointBackgroundColor: primaryColor,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            fill: true,
-                            tension: 0.3 // Sorgt für geschwungene (nicht kantige) Linien
+                            label: 'Laufzeit', data: dataPts, borderColor: primaryColor, backgroundColor: primaryColor + '33',
+                            borderWidth: 2, pointBackgroundColor: primaryColor, pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.3
                         }]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }, // Legende ausblenden, da es nur eine Linie gibt
-                            tooltip: {
-                                callbacks: {
-                                    // Zeigt im Tooltip die sauber formatierte Zeit an
-                                    label: function(context) {
-                                        return ' ' + formatTime(context.raw);
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                ticks: {
-                                    color: textColor,
-                                    // Y-Achse: Millisekunden in Euer Zeitformat umwandeln
-                                    callback: function(value) {
-                                        return formatTime(value);
-                                    }
-                                },
-                                grid: { color: gridColor }
-                            },
-                            x: {
-                                ticks: { color: textColor },
-                                grid: { display: false } // Vertikale Gitterlinien ausblenden für einen cleanen Look
-                            }
-                        }
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return ' ' + formatTime(context.raw); } } } },
+                        scales: { y: { ticks: { color: textColor, callback: function(value) { return formatTime(value); } }, grid: { color: gridColor } }, x: { ticks: { color: textColor }, grid: { display: false } } }
                     }
                 });
             }
         }
+
 
 
         function tryDeleteRunner(e, runnerName) {
