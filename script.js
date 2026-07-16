@@ -122,6 +122,8 @@
             buildEventSelectMenu(); loadRunsForCurrentEvent(); renderCustomButtons('penalty'); renderCustomButtons('bonus'); initTheme(); resetForm(); loadVersionInfo(); loadWhitelabelInfo();
             loadWatermark();
             checkUrlImport();
+            
+            updateRunnerDatalist();
         };
 
         window.onunload = function() { if (popupWindow) popupWindow.close(); };
@@ -1495,18 +1497,56 @@ function renameCurrentEvent() {
 
         
                 // --- LÄUFERVERWALTUNG & STATISTIKEN ---
-        let runnerRegistry = JSON.parse(localStorage.getItem('runnerRegistry')) || [];
+        let savedRegistry = JSON.parse(localStorage.getItem('runnerRegistry'));
+                // --- LÄUFERVERWALTUNG & STATISTIKEN ---
+        let runnerRegistry = [];
+        try {
+            const saved = localStorage.getItem('runnerRegistry');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) runnerRegistry = parsed;
+            }
+        } catch(e) {
+            console.warn("Alte Läuferdaten zurückgesetzt.");
+            runnerRegistry = [];
+        }
 
+        // NEU: Auto-Heiler! Holt die [Emojis] für alte Einträge aus den Event-Daten zurück
+        let registryChanged = false;
+        runnerRegistry = runnerRegistry.map(regName => {
+            if (!regName.startsWith('[')) {
+                for (let ev of eventList) {
+                    const evRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${ev}`)) || [];
+                    const found = evRuns.find(r => getCleanDisplayName(r.name) === regName);
+                    if (found && found.name !== regName) {
+                        registryChanged = true;
+                        return found.name; // Gibt den Namen inkl. [Emoji] zurück
+                    }
+                }
+            }
+            return regName;
+        });
+        if (registryChanged) localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
+
+        // NEU: Speichert nun immer den Namen inkl. Wappen
         function registerRunner(name) {
             if (!name) return;
             const cleanName = getCleanDisplayName(name);
-            if (!runnerRegistry.includes(cleanName)) {
-                runnerRegistry.push(cleanName);
-                runnerRegistry.sort((a, b) => a.localeCompare(b));
+            
+            // Existiert der Läufer (anhand des sauberen Namens) bereits?
+            const existingIndex = runnerRegistry.findIndex(n => getCleanDisplayName(n) === cleanName);
+            
+            if (existingIndex === -1) {
+                runnerRegistry.push(name); // Vollen Namen in DB
+                runnerRegistry.sort((a, b) => getCleanDisplayName(a).localeCompare(getCleanDisplayName(b)));
                 localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
-                updateRunnerDatalist();
+            } else if (runnerRegistry[existingIndex] !== name) {
+                // Das [Emoji] hat sich geändert! Wappen wird aktualisiert.
+                runnerRegistry[existingIndex] = name;
+                localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
             }
         }
+
 
         function updateRunnerDatalist() {
             const dl = document.getElementById('registeredRunnersList');
@@ -1518,8 +1558,6 @@ function renameCurrentEvent() {
                 dl.appendChild(opt);
             });
         }
-        // Initiale Befüllung beim Start
-        updateRunnerDatalist();
 
         // -> WICHTIG: Erweitert Eure bestehende saveRun() Funktion!
         // Fügt dort direkt nach dem Auslesen des Namens "registerRunner(runnerName);" ein.
@@ -1551,15 +1589,20 @@ function renameCurrentEvent() {
         function renderRunnerManagementList() {
             const listEl = document.getElementById('rmRunnerList');
             listEl.innerHTML = '';
-            runnerRegistry.forEach(runnerName => {
+            runnerRegistry.forEach(fullName => {
+                const cleanName = getCleanDisplayName(fullName);
+                const iconHTML = getRunnerIconHTML(fullName);
+
                 const div = document.createElement('div');
                 div.className = 'runner-list-item';
-                div.innerHTML = `<span>${escapeHTML(runnerName)}</span> 
-                                 <button class="btn-delete-runner" title="${translations['lblActionDelete'] || 'Löschen'}" onclick="tryDeleteRunner(event, '${escapeHTML(runnerName)}')">🗑️</button>`;
+                div.innerHTML = `<div style="display:flex; align-items:center;">
+                                    ${iconHTML} <span style="margin-left:8px;">${escapeHTML(cleanName)}</span>
+                                 </div> 
+                                 <button class="btn-delete-runner" title="${translations['lblActionDelete'] || 'Löschen'}" onclick="tryDeleteRunner(event, '${escapeHTML(cleanName)}')">🗑️</button>`;
                 div.onclick = () => {
                     document.querySelectorAll('.runner-list-item').forEach(i => i.classList.remove('active'));
                     div.classList.add('active');
-                    renderRunnerStats(runnerName);
+                    renderRunnerStats(fullName); // Stats erfordert nun den vollen Namen!
                 };
                 listEl.appendChild(div);
             });
@@ -1620,118 +1663,83 @@ function renameCurrentEvent() {
         }
 
 
-            function renderRunnerStats(runnerName) {
+            function renderRunnerStats(fullName) {
+            const cleanName = getCleanDisplayName(fullName); // Für Abfragen den reinen Namen extrahieren
             const statsPane = document.getElementById('rmRunnerStats');
-            const runs = getRunnerTotalStats(runnerName);
+            const runs = getRunnerTotalStats(cleanName);
             const validRuns = runs.filter(r => r.status === "REGULÄR");
             
             let bestTimeMs = validRuns.length > 0 ? Math.min(...validRuns.map(r => r.timeMs)) : null;
 
-            // Neue Statistik-Zähler
-            let gold = 0, silver = 0, bronze = 0;
-            let dns = 0, dnf = 0, dnq = 0;
-            let rankSum = 0, rankCount = 0;
-
+            let gold = 0, silver = 0, bronze = 0, dns = 0, dnf = 0, dnq = 0, rankSum = 0, rankCount = 0;
             runs.forEach(r => {
-                if (r.rank === 1) gold++;
-                if (r.rank === 2) silver++;
-                if (r.rank === 3) bronze++;
-                
-                if (r.rank !== null) {
-                    rankSum += r.rank;
-                    rankCount++;
-                }
-
-                if (r.status === "DNS") dns++;
-                if (r.status === "DNF") dnf++;
-                if (r.status === "DNQ") dnq++;
+                if (r.rank === 1) gold++; if (r.rank === 2) silver++; if (r.rank === 3) bronze++;
+                if (r.rank !== null) { rankSum += r.rank; rankCount++; }
+                if (r.status === "DNS") dns++; if (r.status === "DNF") dnf++; if (r.status === "DNQ") dnq++;
             });
 
             const totalMedals = gold + silver + bronze;
             const avgRank = rankCount > 0 ? (rankSum / rankCount).toFixed(1) : '-';
 
-            let html = `<h4 style="margin-top:0; color:var(--primary); font-size: 1.4rem;">${escapeHTML(runnerName)}</h4>`;
+            // NEU: Das Wappen (Emoji) prangt majestätisch neben dem Titel!
+            let html = `<h4 style="margin-top:0; color:var(--primary); font-size: 1.4rem; display:flex; align-items:center;">
+                            ${getRunnerIconHTML(fullName)} <span style="margin-left:8px;">${escapeHTML(cleanName)}</span>
+                        </h4>`;
             
-            // Karte 1: Quick Facts (Neues zweispaltiges Grid-Layout)
             html += `<div class="stat-card">
                         <div class="stat-card-title">${translations['lblOverview'] || 'Überblick'}</div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem;">
                             <div>${translations['lblStatTotalRuns'] || 'Gesamtläufe:'} <b>${runs.length}</b></div>
                             <div>${translations['lblStatBestTime'] || 'Bestzeit:'} <b>${bestTimeMs ? formatTime(bestTimeMs) : '-'}</b></div>
-                            
                             <div style="border-top: 1px solid var(--border-color); padding-top: 8px;">${translations['lblStatAvgRank'] || 'Ø Platzierung:'} <b>${avgRank}</b></div>
                             <div style="border-top: 1px solid var(--border-color); padding-top: 8px;">${translations['lblStatTotalMedals'] || 'Medaillen gesamt:'} <b>${totalMedals}</b></div>
-                            
                             <div>${translations['lblStatGold'] || '🥇 Gold:'} <b>${gold}</b></div>
                             <div>${translations['lblStatDNS'] || 'DNS:'} <b>${dns}</b></div>
-                            
                             <div>${translations['lblStatSilver'] || '🥈 Silber:'} <b>${silver}</b></div>
                             <div>${translations['lblStatDNF'] || 'DNF:'} <b>${dnf}</b></div>
-                            
                             <div>${translations['lblStatBronze'] || '🥉 Bronze:'} <b>${bronze}</b></div>
                             <div>${translations['lblStatDNQ'] || 'DNQ:'} <b>${dnq}</b></div>
                         </div>
                      </div>`;
 
-            // Karte 2: Verlauf (mit Chart.js Canvas)
             if (validRuns.length > 0) {
-                html += `<div class="stat-card">
-                            <div class="stat-card-title">${translations['lblPerformanceChart'] || 'Leistungsverlauf'}</div>
-                            <div style="position: relative; height: 250px; width: 100%;">
-                                <canvas id="runnerPerformanceChart"></canvas>
-                            </div>
-                         </div>`;
+                html += `<div class="stat-card"><div class="stat-card-title">${translations['lblPerformanceChart'] || 'Leistungsverlauf'}</div><div style="position: relative; height: 250px; width: 100%;"><canvas id="runnerPerformanceChart"></canvas></div></div>`;
             } else {
                 html += `<div style="color:var(--text-light); font-style:italic; font-size:0.9rem;">${translations['lblNoStatsAvailable'] || 'Keine regulären Laufzeiten für Grafiken vorhanden.'}</div>`;
             }
 
             statsPane.innerHTML = html;
 
-            // Chart.js Diagramm initialisieren (identisch zur vorherigen Version)
             if (validRuns.length > 0) {
                 const ctx = document.getElementById('runnerPerformanceChart').getContext('2d');
                 if (runnerChartInstance) runnerChartInstance.destroy();
-
-                const labels = validRuns.map(r => r.event);
-                const dataPts = validRuns.map(r => r.timeMs);
+                const labels = validRuns.map(r => r.event); const dataPts = validRuns.map(r => r.timeMs);
                 const rootStyle = getComputedStyle(document.documentElement);
                 const primaryColor = rootStyle.getPropertyValue('--primary').trim() || '#3498db';
                 const textColor = rootStyle.getPropertyValue('--text-light').trim() || '#7f8c8d';
                 const gridColor = rootStyle.getPropertyValue('--border-color').trim() || '#e0e0e0';
 
                 runnerChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Laufzeit', data: dataPts, borderColor: primaryColor, backgroundColor: primaryColor + '33',
-                            borderWidth: 2, pointBackgroundColor: primaryColor, pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.3
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return ' ' + formatTime(context.raw); } } } },
-                        scales: { y: { ticks: { color: textColor, callback: function(value) { return formatTime(value); } }, grid: { color: gridColor } }, x: { ticks: { color: textColor }, grid: { display: false } } }
-                    }
+                    type: 'line', data: { labels: labels, datasets: [{ label: 'Laufzeit', data: dataPts, borderColor: primaryColor, backgroundColor: primaryColor + '33', borderWidth: 2, pointBackgroundColor: primaryColor, pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.3 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return ' ' + formatTime(context.raw); } } } }, scales: { y: { ticks: { color: textColor, callback: function(value) { return formatTime(value); } }, grid: { color: gridColor } }, x: { ticks: { color: textColor }, grid: { display: false } } } }
                 });
             }
         }
 
 
 
-        function tryDeleteRunner(e, runnerName) {
+        function tryDeleteRunner(e, cleanName) {
             e.stopPropagation();
-            const runs = getRunnerTotalStats(runnerName);
+            const runs = getRunnerTotalStats(cleanName);
             if (runs.length > 0) {
                 alert(translations['lblRunnerInUseError'] || "Dieser Läufer ist noch in Events aktiv und kann nicht gelöscht werden.");
                 return;
             }
             if (confirm(translations['lblRunnerDeleteConfirm'] || "Diesen Läufer wirklich aus der Datenbank entfernen?")) {
-                runnerRegistry = runnerRegistry.filter(n => n !== runnerName);
+                runnerRegistry = runnerRegistry.filter(n => getCleanDisplayName(n) !== cleanName);
                 localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
-                updateRunnerDatalist();
                 renderRunnerManagementList();
-                document.getElementById('rmRunnerStats').innerHTML = '<div style="color:var(--text-light); text-align:center; margin-top:20px;">Wählt einen Läufer aus.</div>';
+                document.getElementById('rmRunnerStats').innerHTML = `<div style="color:var(--text-light); text-align:center; margin-top:20px;">${translations['lblSelectRunner'] || 'Wählt einen Läufer aus.'}</div>`;
             }
         }
         
@@ -1803,12 +1811,70 @@ function renameCurrentEvent() {
                 }
             }
 
-            // 4. Läufer-Register (Statistik-DB) aktualisieren
-            runnerRegistry = runnerRegistry.filter(n => n !== cleanOld); // Alten Namen rauswerfen
-            if (!runnerRegistry.includes(cleanNew)) {
-                runnerRegistry.push(cleanNew); // Neuen Namen rein
+                        // 4. Läufer-Register (Statistik-DB) aktualisieren
+            runnerRegistry = runnerRegistry.filter(n => getCleanDisplayName(n) !== cleanOld); 
+            const cleanNewIndex = runnerRegistry.findIndex(n => getCleanDisplayName(n) === cleanNew);
+            if (cleanNewIndex === -1) {
+                runnerRegistry.push(newName); // Den VOLLEN neuen Namen rein
+            } else {
+                runnerRegistry[cleanNewIndex] = newName; // Wappen aktualisieren falls er schon existiert
             }
-            runnerRegistry.sort((a, b) => a.localeCompare(b));
+            runnerRegistry.sort((a, b) => getCleanDisplayName(a).localeCompare(getCleanDisplayName(b)));
             localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
-            updateRunnerDatalist();
+
+        }
+
+        
+                // --- CUSTOM AUTOCOMPLETE / LUPEN-SUCHE ---
+        function toggleAutocomplete(inputId, dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            
+            // Wenn es schon offen ist, schließen
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                // Alle anderen eventuell offenen Fenster schließen
+                document.querySelectorAll('.autocomplete-dropdown').forEach(dd => dd.style.display = 'none');
+                
+                // Liste füllen und anzeigen
+                updateLiveAutocomplete(inputId, dropdownId, true);
+                dropdown.style.display = 'block';
+            }
+        }
+
+                function updateLiveAutocomplete(inputId, dropdownId, forceUpdate = false) {
+            const input = document.getElementById(inputId);
+            const dropdown = document.getElementById(dropdownId);
+            
+            if (dropdown.style.display !== 'block' && !forceUpdate) return;
+
+            const query = input.value.toLowerCase().trim();
+            dropdown.innerHTML = '';
+            
+            const matches = runnerRegistry.filter(name => 
+                getCleanDisplayName(name).toLowerCase().includes(query) || 
+                name.toLowerCase().includes(query)
+            );
+            
+            if (matches.length === 0) {
+                dropdown.innerHTML = `<div class="autocomplete-item" style="color:var(--text-light); font-style:italic; cursor:default;">Keine Treffer</div>`;
+                return;
+            }
+
+            matches.forEach(fullName => {
+                const cleanName = getCleanDisplayName(fullName);
+                const iconHTML = getRunnerIconHTML(fullName); // Lädt das Icon!
+                
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                // Wappen und Name werden vereint
+                div.innerHTML = `${iconHTML} <span style="margin-left: 8px;">${escapeHTML(cleanName)}</span>`;
+                div.onclick = () => {
+                    input.value = fullName; // Der volle Name inkl. [Emoji] wird übernommen
+                    dropdown.style.display = 'none';
+                };
+                dropdown.appendChild(div);
+            });
         }
