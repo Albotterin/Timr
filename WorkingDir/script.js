@@ -606,15 +606,16 @@ if (btnGroup) btnGroup.title = translations['lblSearchTooltip'] || "Läufer such
             renderGroupRunners();
         }
 
-                function saveGroupRunner(id) {
+                        function saveGroupRunner(id) {
             const r = groupRunners.find(runner => runner.id === id); 
             if(!r) return;
             
-            // NEU: Läufer im globalen Register speichern
-            registerRunner(r.name);
+            // NEU: Registriert den Läufer und empfängt seine ID
+            const rId = registerRunner(r.name);
 
             runs.push({ 
                 id: Date.now() + Math.random(), 
+                runnerId: rId, // NEU: ID fest anheften!
                 name: r.name, 
                 timeMs: r.timeMs, 
                 timeString: (r.status === "DNF" || r.status === "DNS") ? r.status : formatTime(r.timeMs), 
@@ -760,18 +761,19 @@ if (btnGroup) btnGroup.title = translations['lblSearchTooltip'] || "Läufer such
         function updateAdjustmentNoticeDisplay() { const n = document.getElementById('adjustmentNotice'); if (currentStatus !== "REGULÄR") { n.innerText = `Status: ${currentStatus}`; n.className = "adjustment-display status-info"; } else { let t = ""; if (penaltyTime > 0) t += `+${penaltyTime}s`; if (bonusTime > 0) t += ` -${bonusTime}s`; n.innerText = t.trim(); n.className = `adjustment-display ${penaltyTime >= bonusTime ? 'penalty' : 'bonus'}`; } syncPopupNotice(); }
         
 
-                function saveRun() {
+                        function saveRun() {
             const runnerName = document.getElementById('runnerName').value.trim();
             if (!runnerName) {
                 alert(translations['lblEnterRunnerName'] || "Bitte Läufernamen eingeben.");
                 return;
             }
 
-            // NEU: Läufer im globalen Register speichern
-            registerRunner(runnerName);
+            // NEU: Registriert den Läufer und empfängt seine ID
+            const rId = registerRunner(runnerName);
 
             runs.push({
                 id: Date.now() + Math.random(),
+                runnerId: rId, // NEU: ID fest anheften!
                 name: runnerName,
                 timeMs: currentTotalMs,
                 timeString: (currentStatus === "DNF" || currentStatus === "DNS") ? currentStatus : formatTime(currentTotalMs),
@@ -784,6 +786,7 @@ if (btnGroup) btnGroup.title = translations['lblSearchTooltip'] || "Läufer such
             sortAndDisplayRuns();
             resetForm();
         }
+
 
         function resetForm() { isRunning = false; isPaused = false; clearInterval(timerInterval); elapsedBeforePause = 0; currentTotalMs = 0; penaltyCount = 0; penaltyTime = 0; bonusCount = 0; bonusTime = 0; currentStatus = "REGULÄR"; const isLocked = lockedEvents.includes(currentEvent); document.getElementById('timingCard').style.display = isLocked ? 'none' : 'block'; document.getElementById('runnerName').value = ""; document.getElementById('runnerName').disabled = isLocked; document.getElementById('display').innerText = "00:00:00.00"; document.getElementById('adjustmentNotice').innerText = ""; document.getElementById('startBtn').disabled = isLocked; document.getElementById('startBtn').innerText = translations['lblStartBtn'] || "Start"; document.getElementById('stopBtn').disabled = true; document.getElementById('saveBtn').disabled = true; document.getElementById('statusBtnDNS').disabled = isLocked; document.getElementById('statusBtnDNF').disabled = isLocked; document.getElementById('statusBtnDNQ').disabled = true; document.getElementById('addPenaltyTypeBtn').disabled = isLocked; document.getElementById('addBonusTypeBtn').disabled = isLocked; renderCustomButtons('penalty'); renderCustomButtons('bonus'); groupRunners = []; renderGroupRunners(); document.getElementById('groupSetupForm').style.display = 'block'; document.getElementById('groupMassActionRow').style.display = 'none'; syncPopupRunnerName(); syncPopupTime(isLocked ? (translations['lblTimerBlocked'] || "GEBLOCKT") : "00:00:00.00"); syncPopupNotice(); }
 
@@ -888,7 +891,7 @@ if (btnGroup) btnGroup.title = translations['lblSearchTooltip'] || "Läufer such
         function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
         function toggleEditTimeField() { document.getElementById('editTimeGroup').style.display = (document.getElementById('editStatus').value === "DNF" || document.getElementById('editStatus').value === "DNS") ? 'none' : 'flex'; }
         
-                        function submitEditRun() {
+                                function submitEditRun() {
             const id = parseFloat(document.getElementById('editRunId').value); 
             const index = runs.findIndex(r => r.id === id); 
             if (index === -1) return;
@@ -896,12 +899,15 @@ if (btnGroup) btnGroup.title = translations['lblSearchTooltip'] || "Läufer such
             const oldName = runs[index].name;
             const newName = document.getElementById('editRunnerName').value.trim() || "Unbekannt";
             
-            // NEU: Globale Umbenennung aufrufen, wenn der Name abweicht
+            let rId = runs[index].runnerId; // Vorhandene ID als Fallback
+
+            // Globale Umbenennung oder ID-Sicherung aufrufen
             if (oldName !== newName) {
                 renameRunnerGlobally(oldName, newName);
+                const found = runnerRegistry.find(r => getCleanDisplayName(r.name) === getCleanDisplayName(newName));
+                rId = found ? found.id : registerRunner(newName);
             } else {
-                // Migration alter Läufer, auch wenn der Name nicht geändert wurde
-                registerRunner(newName);
+                rId = registerRunner(newName);
             }
 
             const stat = document.getElementById('editStatus').value; 
@@ -920,9 +926,10 @@ if (btnGroup) btnGroup.title = translations['lblSearchTooltip'] || "Läufer such
                 pCount = 0; pTime = 0; bCount = 0; bTime = 0; 
             }
             
-            // Aktualisieren des spezifischen Laufs 
+            // Lauf aktualisieren, jetzt bombensicher mit ID versehen
             runs[index] = { 
                 id: id, 
+                runnerId: rId, // NEU: ID mitspeichern!
                 name: newName, 
                 status: stat, 
                 timeMs: timeMs, 
@@ -1506,52 +1513,73 @@ function renameCurrentEvent() {
                 // --- LÄUFERVERWALTUNG & STATISTIKEN ---
         let savedRegistry = JSON.parse(localStorage.getItem('runnerRegistry'));
                 // --- LÄUFERVERWALTUNG & STATISTIKEN ---
+        // --- LÄUFERVERWALTUNG & STATISTIKEN (v2: Objektbasiert mit IDs) ---
         let runnerRegistry = [];
         try {
             const saved = localStorage.getItem('runnerRegistry');
             if (saved) {
                 const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed)) runnerRegistry = parsed;
+                if (Array.isArray(parsed)) {
+                    // MIGRATION: Sind es noch alte Strings? Dann in Objekte umwandeln!
+                    if (parsed.length > 0 && typeof parsed[0] === 'string') {
+                        runnerRegistry = parsed.map(name => ({
+                            id: 'runner_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                            name: name
+                        }));
+                        localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
+                    } else {
+                        runnerRegistry = parsed;
+                    }
+                }
             }
         } catch(e) {
             console.warn("Alte Läuferdaten zurückgesetzt.");
             runnerRegistry = [];
         }
 
-        // NEU: Auto-Heiler! Holt die [Emojis] für alte Einträge aus den Event-Daten zurück
+        // Auto-Heiler: Prüft Emojis/Wappen (angepasst an Objekte)
         let registryChanged = false;
-        runnerRegistry = runnerRegistry.map(regName => {
-            if (!regName.startsWith('[')) {
+        runnerRegistry.forEach(runner => {
+            if (runner.name && !runner.name.startsWith('[')) {
                 for (let ev of eventList) {
                     const evRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${ev}`)) || [];
-                    const found = evRuns.find(r => getCleanDisplayName(r.name) === regName);
-                    if (found && found.name !== regName) {
+                    const found = evRuns.find(r => getCleanDisplayName(r.name) === getCleanDisplayName(runner.name));
+                    if (found && found.name !== runner.name) {
                         registryChanged = true;
-                        return found.name; // Gibt den Namen inkl. [Emoji] zurück
+                        runner.name = found.name;
+                        break;
                     }
                 }
             }
-            return regName;
         });
         if (registryChanged) localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
 
-        // NEU: Speichert nun immer den Namen inkl. Wappen
+    // NEU: Speichert nun immer den Namen inkl. Wappen
+         // NEU: Gibt nun immer die ID des Läufers zurück!
         function registerRunner(name) {
-            if (!name) return;
+            if (!name) return null;
             const cleanName = getCleanDisplayName(name);
             
-            // Existiert der Läufer (anhand des sauberen Namens) bereits?
-            const existingIndex = runnerRegistry.findIndex(n => getCleanDisplayName(n) === cleanName);
+            let existingRunner = runnerRegistry.find(r => getCleanDisplayName(r.name) === cleanName);
             
-            if (existingIndex === -1) {
-                runnerRegistry.push(name); // Vollen Namen in DB
-                runnerRegistry.sort((a, b) => getCleanDisplayName(a).localeCompare(getCleanDisplayName(b)));
-                localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
-            } else if (runnerRegistry[existingIndex] !== name) {
-                // Das [Emoji] hat sich geändert! Wappen wird aktualisiert.
-                runnerRegistry[existingIndex] = name;
-                localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
+            if (!existingRunner) {
+                // Ein neuer Athlet wird geboren!
+                existingRunner = {
+                    id: 'runner_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    name: name
+                    // HIER ist nun Platz für zukünftige Daten: birthDate: "", club: "" etc.
+                };
+                runnerRegistry.push(existingRunner);
+            } else if (existingRunner.name !== name) {
+                // Name (oder Emoji) hat sich geändert
+                existingRunner.name = name;
             }
+            
+            // Immer alphabetisch sortieren und speichern
+            runnerRegistry.sort((a, b) => getCleanDisplayName(a.name).localeCompare(getCleanDisplayName(b.name)));
+            localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
+            
+            return existingRunner.id;
         }
 
 
@@ -1596,41 +1624,42 @@ function renameCurrentEvent() {
         function renderRunnerManagementList() {
             const listEl = document.getElementById('rmRunnerList');
             listEl.innerHTML = '';
-            runnerRegistry.forEach(fullName => {
-                const cleanName = getCleanDisplayName(fullName);
-                const iconHTML = getRunnerIconHTML(fullName);
+            runnerRegistry.forEach(runner => {
+                const cleanName = getCleanDisplayName(runner.name);
+                const iconHTML = getRunnerIconHTML(runner.name);
 
                 const div = document.createElement('div');
                 div.className = 'runner-list-item';
                 div.innerHTML = `<div style="display:flex; align-items:center;">
                                     ${iconHTML} <span style="margin-left:8px;">${escapeHTML(cleanName)}</span>
                                  </div> 
-                                 <button class="btn-delete-runner" title="${translations['lblActionDelete'] || 'Löschen'}" onclick="tryDeleteRunner(event, '${escapeHTML(cleanName)}')">🗑️</button>`;
+                                 <button class="btn-delete-runner" title="${translations['lblActionDelete'] || 'Löschen'}" onclick="tryDeleteRunner(event, '${runner.id}')">🗑️</button>`;
                 div.onclick = () => {
                     document.querySelectorAll('.runner-list-item').forEach(i => i.classList.remove('active'));
                     div.classList.add('active');
-                    renderRunnerStats(fullName); // Stats erfordert nun den vollen Namen!
+                    renderRunnerStats(runner.id); // Nutzt jetzt die ID!
                 };
                 listEl.appendChild(div);
             });
         }
 
-                function getRunnerTotalStats(runnerName) {
+                function getRunnerTotalStats(runnerId) {
+            const runnerObj = runnerRegistry.find(r => r.id === runnerId);
+            if (!runnerObj) return [];
+            const cleanName = getCleanDisplayName(runnerObj.name);
+
             let allRuns = [];
             eventList.forEach(ev => {
                 const evRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${ev}`)) || [];
                 if (evRuns.length === 0) return;
 
-                // Event-Einstellungen für die korrekte Sortierung abrufen
                 const settings = getEventSettings(ev);
                 const mode = settings.mode;
                 const targetMs = settings.targetTimeMs;
 
-                // Läufe exakt so sortieren wie in der Bestenliste
                 evRuns.sort((a, b) => { 
                     const ord = { "REGULÄR": 1, "DNQ": 2, "DNF": 3, "DNS": 4 }; 
                     if (ord[a.status] !== ord[b.status]) return ord[a.status] - ord[b.status]; 
-                    
                     if (a.status === "REGULÄR" || a.status === "DNQ") {
                         if (mode === 'fastest') return a.timeMs - b.timeMs;
                         if (mode === 'slowest') return b.timeMs - a.timeMs;
@@ -1641,7 +1670,6 @@ function renameCurrentEvent() {
 
                 let currentRank = 1;
                 evRuns.forEach((run, index) => {
-                    // Rangfolge berechnen (Gleichstand berücksichtigen)
                     if (index > 0) {
                         const prevRun = evRuns[index - 1];
                         if ((run.status === "REGULÄR" || run.status === "DNQ") && (prevRun.status === "REGULÄR" || prevRun.status === "DNQ")) {
@@ -1649,18 +1677,13 @@ function renameCurrentEvent() {
                             if (mode === 'target') isSameRank = Math.abs(run.timeMs - targetMs) === Math.abs(prevRun.timeMs - targetMs);
                             else isSameRank = run.timeMs === prevRun.timeMs;
                             if (!isSameRank) currentRank = index + 1;
-                        } else if (run.status !== "REGULÄR" && run.status !== "DNQ") { 
-                            currentRank = index + 1; 
-                        }
+                        } else if (run.status !== "REGULÄR" && run.status !== "DNQ") { currentRank = index + 1; }
                     }
 
-                    if (getCleanDisplayName(run.name) === runnerName) {
+                    // NEU: Vergleicht anhand der ID, oder bei alten Läufen sicherheitshalber noch am Namen
+                    if (run.runnerId === runnerId || getCleanDisplayName(run.name) === cleanName) {
                         allRuns.push({ 
-                            event: ev, 
-                            timeMs: run.timeMs, 
-                            timeString: run.timeString, 
-                            status: run.status,
-                            // Nur reguläre Läufe erhalten eine offizielle Platzierung (Medaille/Schnitt)
+                            event: ev, timeMs: run.timeMs, timeString: run.timeString, status: run.status,
                             rank: (run.status === "REGULÄR") ? currentRank : null
                         });
                     }
@@ -1669,20 +1692,18 @@ function renameCurrentEvent() {
             return allRuns;
         }
 
+                   function renderRunnerStats(runnerId) {
+            const runnerObj = runnerRegistry.find(r => r.id === runnerId);
+            if (!runnerObj) return;
 
-                    function renderRunnerStats(fullName) {
+            const fullName = runnerObj.name;
             const cleanName = getCleanDisplayName(fullName);
             const statsPane = document.getElementById('rmRunnerStats');
-            const runs = getRunnerTotalStats(cleanName);
+            const runs = getRunnerTotalStats(runnerId);
             const validRuns = runs.filter(r => r.status === "REGULÄR");
             
             let bestTimeMs = validRuns.length > 0 ? Math.min(...validRuns.map(r => r.timeMs)) : null;
-            
-            // NEU: Die gesamte gelaufene Zeit berechnen
-            let totalTimeMs = 0;
-            validRuns.forEach(r => {
-                totalTimeMs += r.timeMs;
-            });
+            let totalTimeMs = 0; validRuns.forEach(r => { totalTimeMs += r.timeMs; });
 
             let gold = 0, silver = 0, bronze = 0, dns = 0, dnf = 0, dnq = 0, rankSum = 0, rankCount = 0;
             runs.forEach(r => {
@@ -1694,30 +1715,30 @@ function renameCurrentEvent() {
             const totalMedals = gold + silver + bronze;
             const avgRank = rankCount > 0 ? (rankSum / rankCount).toFixed(1) : '-';
 
-            let html = `<h4 style="margin-top:0; color:var(--primary); font-size: 1.4rem; display:flex; align-items:center;">
-                            ${getRunnerIconHTML(fullName)} <span style="margin-left:8px;">${escapeHTML(cleanName)}</span>
-                        </h4>`;
+            // NEU: Name und ID werden hier in einem eleganten vertikalen Block strukturiert
+            let html = `<div style="margin-bottom: 15px;">
+                            <h4 style="margin: 0; color:var(--primary); font-size: 1.4rem; display:flex; align-items:center;">
+                                ${getRunnerIconHTML(fullName)} <span style="margin-left:8px;">${escapeHTML(cleanName)}</span>
+                            </h4>
+                            <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 4px; margin-left: 28px; font-family: monospace;">
+                                (${escapeHTML(runnerId)})
+                            </div>
+                        </div>`;
             
-            // Das Grid wurde um die Gesamtzeit erweitert und optisch ausbalanciert
+            // Ab hier bleibt der restliche HTML-Zusammenbau für die Karten identisch...
+            
             html += `<div class="stat-card">
                         <div class="stat-card-title">${translations['lblOverview'] || 'Überblick'}</div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem;">
                             <div>${translations['lblStatTotalRuns'] || 'Gesamtläufe:'} <b>${runs.length}</b></div>
                             <div>${translations['lblStatTotalTime'] || 'Gesamtzeit:'} <b>${totalTimeMs > 0 ? formatTime(totalTimeMs) : '-'}</b></div>
-                            
                             <div>${translations['lblStatBestTime'] || 'Bestzeit:'} <b>${bestTimeMs ? formatTime(bestTimeMs) : '-'}</b></div>
                             <div>${translations['lblStatAvgRank'] || 'Ø Platzierung:'} <b>${avgRank}</b></div>
-                            
-                            <div style="border-top: 1px solid var(--border-color); padding-top: 8px; grid-column: 1 / -1;">
-                                ${translations['lblStatTotalMedals'] || 'Medaillen gesamt:'} <b>${totalMedals}</b>
-                            </div>
-                            
+                            <div style="border-top: 1px solid var(--border-color); padding-top: 8px; grid-column: 1 / -1;">${translations['lblStatTotalMedals'] || 'Medaillen gesamt:'} <b>${totalMedals}</b></div>
                             <div>${translations['lblStatGold'] || '🥇 Gold:'} <b>${gold}</b></div>
                             <div>${translations['lblStatDNS'] || 'DNS:'} <b>${dns}</b></div>
-                            
                             <div>${translations['lblStatSilver'] || '🥈 Silber:'} <b>${silver}</b></div>
                             <div>${translations['lblStatDNF'] || 'DNF:'} <b>${dnf}</b></div>
-                            
                             <div>${translations['lblStatBronze'] || '🥉 Bronze:'} <b>${bronze}</b></div>
                             <div>${translations['lblStatDNQ'] || 'DNQ:'} <b>${dnq}</b></div>
                         </div>
@@ -1748,17 +1769,15 @@ function renameCurrentEvent() {
         }
 
 
-
-
-        function tryDeleteRunner(e, cleanName) {
+        function tryDeleteRunner(e, runnerId) {
             e.stopPropagation();
-            const runs = getRunnerTotalStats(cleanName);
+            const runs = getRunnerTotalStats(runnerId);
             if (runs.length > 0) {
                 alert(translations['lblRunnerInUseError'] || "Dieser Läufer ist noch in Events aktiv und kann nicht gelöscht werden.");
                 return;
             }
             if (confirm(translations['lblRunnerDeleteConfirm'] || "Diesen Läufer wirklich aus der Datenbank entfernen?")) {
-                runnerRegistry = runnerRegistry.filter(n => getCleanDisplayName(n) !== cleanName);
+                runnerRegistry = runnerRegistry.filter(r => r.id !== runnerId);
                 localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
                 renderRunnerManagementList();
                 document.getElementById('rmRunnerStats').innerHTML = `<div style="color:var(--text-light); text-align:center; margin-top:20px;">${translations['lblSelectRunner'] || 'Wählt einen Läufer aus.'}</div>`;
@@ -1864,7 +1883,7 @@ function renameCurrentEvent() {
             }
         }
 
-                function updateLiveAutocomplete(inputId, dropdownId, forceUpdate = false) {
+                        function updateLiveAutocomplete(inputId, dropdownId, forceUpdate = false) {
             const input = document.getElementById(inputId);
             const dropdown = document.getElementById(dropdownId);
             
@@ -1873,20 +1892,20 @@ function renameCurrentEvent() {
             const query = input.value.toLowerCase().trim();
             dropdown.innerHTML = '';
             
-            const matches = runnerRegistry.filter(name => 
-                getCleanDisplayName(name).toLowerCase().includes(query) || 
-                name.toLowerCase().includes(query)
+            // NEU: Greift nun auf runner.name zu
+            const matches = runnerRegistry.filter(runner => 
+                getCleanDisplayName(runner.name).toLowerCase().includes(query) || 
+                runner.name.toLowerCase().includes(query)
             );
             
             if (matches.length === 0) {
-                // NEU: Sprachdatei für "Keine Treffer" wird abgefragt
                 dropdown.innerHTML = `<div class="autocomplete-item" style="color:var(--text-light); font-style:italic; cursor:default;">${translations['lblNoMatches'] || 'Keine Treffer'}</div>`;
                 return;
             }
 
-            matches.forEach(fullName => {
-                const cleanName = getCleanDisplayName(fullName);
-                const iconHTML = getRunnerIconHTML(fullName); 
+            matches.forEach(runner => {
+                const cleanName = getCleanDisplayName(runner.name);
+                const iconHTML = getRunnerIconHTML(runner.name); 
                 
                 const div = document.createElement('div');
                 div.className = 'autocomplete-item';
@@ -1894,9 +1913,10 @@ function renameCurrentEvent() {
                 div.style.alignItems = 'center';
                 div.innerHTML = `${iconHTML} <span style="margin-left: 8px;">${escapeHTML(cleanName)}</span>`;
                 div.onclick = () => {
-                    input.value = fullName; 
+                    input.value = runner.name; 
                     dropdown.style.display = 'none';
                 };
                 dropdown.appendChild(div);
             });
         }
+
