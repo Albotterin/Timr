@@ -359,10 +359,16 @@
                 </select>
             </div>
 
-            <div class="form-group" id="targetTimeContainer" style="display: none;">
-                <label id="lblModeTargetTimeLabel" for="eventTargetTimeInput">Zielzeit (hh:mm:ss.ff):</label>
-                <input type="text" id="eventTargetTimeInput" placeholder="00:00:00.00" autocomplete="off">
+                     <div class="form-group" id="targetTimeContainer" style="display: none;">
+                <label id="lblModeTargetTimeLabel">Zielzeit (HH : MM : SS . FF):</label>
+                <div class="time-input-group">
+                    <input type="number" id="ttHours" placeholder="00" min="0" max="99"> <span class="time-sep">:</span>
+                    <input type="number" id="ttMinutes" placeholder="00" min="0" max="59"> <span class="time-sep">:</span>
+                    <input type="number" id="ttSeconds" placeholder="00" min="0" max="59"> <span class="time-sep">.</span>
+                    <input type="number" id="ttMs" placeholder="00" min="0" max="99" title="Hundertstelsekunden">
+                </div>
             </div>
+
             
             <div class="modal-actions">
                 <button id="lblModeCancel" class="btn" style="background-color: var(--text-light);" onclick="closeModeModal()">Abbrechen</button>

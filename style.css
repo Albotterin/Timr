@@ -421,3 +421,40 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus { border-colo
     color: var(--text-light); transition: color 0.2s; padding: 0 4px; 
 }
 .btn-more-actions:hover { color: var(--primary); }
+
+/* Layout für die 4 Zeit-Eingabefelder */
+.time-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.time-input-group input {
+    width: 65px;
+    padding: 10px 5px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--bg-color);
+    color: var(--text);
+    text-align: center;
+    font-size: 1.1rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    outline: none;
+}
+.time-input-group input:focus { border-color: var(--primary); }
+.time-input-group .time-sep {
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+/* Versteckt die raumfüllenden Pfeile in Nummern-Feldern */
+.time-input-group input::-webkit-outer-spin-button,
+.time-input-group input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.time-input-group input[type=number] {
+    -moz-appearance: textfield;
+}

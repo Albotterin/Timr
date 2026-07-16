@@ -1305,7 +1305,22 @@ function renameCurrentEvent() {
         function openModeModal() {
             const settings = getEventSettings(currentEvent);
             document.getElementById('eventModeSelect').value = settings.mode;
-            document.getElementById('eventTargetTimeInput').value = settings.targetTimeMs ? formatTime(settings.targetTimeMs) : "";
+            
+            // Gespeicherte Millisekunden in H, M, S, FF aufteilen
+            let msTotal = settings.targetTimeMs || 0;
+            let h = Math.floor(msTotal / 3600000);
+            msTotal %= 3600000;
+            let m = Math.floor(msTotal / 60000);
+            msTotal %= 60000;
+            let s = Math.floor(msTotal / 1000);
+            let ff = Math.floor((msTotal % 1000) / 10); // Hundertstel
+
+            // Felder befüllen (nur wenn Wert > 0, ansonsten bleibt der Platzhalter sichtbar)
+            document.getElementById('ttHours').value = h > 0 ? h.toString().padStart(2, '0') : '';
+            document.getElementById('ttMinutes').value = m > 0 ? m.toString().padStart(2, '0') : '';
+            document.getElementById('ttSeconds').value = s > 0 ? s.toString().padStart(2, '0') : '';
+            document.getElementById('ttMs').value = ff > 0 ? ff.toString().padStart(2, '0') : '';
+
             toggleTargetTimeInput();
             document.getElementById('modeModal').style.display = 'flex';
         }
@@ -1324,10 +1339,17 @@ function renameCurrentEvent() {
             let targetMs = 0;
             
             if (mode === 'target') {
-                const timeStr = document.getElementById('eventTargetTimeInput').value.trim();
-                targetMs = parseTimeToMs(timeStr);
-                if (targetMs === 0 && timeStr !== "0" && timeStr !== "00:00:00.00") {
-                    alert("Bitte eine gültige Zielzeit im Format hh:mm:ss.ff eingeben.");
+                // Werte aus den 4 Feldern auslesen
+                const h = parseInt(document.getElementById('ttHours').value) || 0;
+                const m = parseInt(document.getElementById('ttMinutes').value) || 0;
+                const s = parseInt(document.getElementById('ttSeconds').value) || 0;
+                const ff = parseInt(document.getElementById('ttMs').value) || 0;
+
+                // Alles in Millisekunden umrechnen (Hundertstel * 10 = Millisekunden)
+                targetMs = (h * 3600000) + (m * 60000) + (s * 1000) + (ff * 10);
+
+                if (targetMs === 0) {
+                    alert("Bitte eine gültige Zielzeit (größer als 0) eingeben.");
                     return;
                 }
             }
