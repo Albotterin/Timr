@@ -408,7 +408,8 @@
             <h3 id="lblRunnerModalTitle" style="margin-top:0; color: var(--primary);">🏃 Läuferverwaltung</h3>
             <div class="runner-management-grid">
 <div class="runner-list-pane">
-    <input type="text" id="runnerSearch" class="runner-search" placeholder="..."> 
+<input type="text" id="runnerSearch" class="runner-search" placeholder="..." onkeyup="filterRunners()">
+
     <div id="rmRunnerList"></div>
 </div>
 
