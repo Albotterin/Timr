@@ -17,7 +17,9 @@
         let loadedLanguagesData = {}; 
         let currentLanguage = 'de';
         let translations = {}; 
-        let watermarkText = ""; // Oben bei Euren Variablen definieren
+        let watermarkText = ""; // Oben bei Euren Variablen definier
+        let runnerChartInstance = null; // Speichert das aktuelle Chart.js Diagramm
+
 
 
         async function compressToBlobB64(str) {
@@ -1534,45 +1536,109 @@ function renameCurrentEvent() {
             return allRuns;
         }
 
-        function renderRunnerStats(runnerName) {
+                function renderRunnerStats(runnerName) {
             const statsPane = document.getElementById('rmRunnerStats');
             const runs = getRunnerTotalStats(runnerName);
             const validRuns = runs.filter(r => r.status === "REGULÄR");
             
             let bestTimeMs = validRuns.length > 0 ? Math.min(...validRuns.map(r => r.timeMs)) : null;
 
-            let html = `<h4 style="margin-top:0; color:var(--primary);">${escapeHTML(runnerName)}</h4>`;
+            let html = `<h4 style="margin-top:0; color:var(--primary); font-size: 1.4rem;">${escapeHTML(runnerName)}</h4>`;
             
             // Karte 1: Quick Facts
             html += `<div class="stat-card">
                         <div class="stat-card-title">${translations['lblOverview'] || 'Überblick'}</div>
-                        <div style="display:flex; justify-content:space-between;">
+                        <div style="display:flex; justify-content:space-between; font-size: 1.1rem;">
                             <span>${translations['lblStatTotalRuns'] || 'Gesamt:'} <b>${runs.length}</b></span>
                             <span>${translations['lblStatBestTime'] || 'Bestzeit:'} <b>${bestTimeMs ? formatTime(bestTimeMs) : '-'}</b></span>
                         </div>
                      </div>`;
 
-            // Karte 2: Verlauf
+            // Karte 2: Verlauf (mit Chart.js Canvas)
             if (validRuns.length > 0) {
                 html += `<div class="stat-card">
-                            <div class="stat-card-title">${translations['lblPerformanceChart'] || 'Leistungsverlauf'}</div>`;
-                const maxTimeMs = Math.max(...validRuns.map(r => r.timeMs));
-                validRuns.forEach(r => {
-                    const pct = (r.timeMs / maxTimeMs) * 100;
-                    html += `
-                        <div class="stat-bar-row">
-                            <div class="stat-bar-label">${escapeHTML(r.event)}</div>
-                            <div class="stat-bar-wrapper"><div class="stat-bar-fill" style="width: ${pct}%;"></div></div>
-                            <div class="stat-bar-time">${r.timeString}</div>
-                        </div>`;
-                });
-                html += `</div>`;
+                            <div class="stat-card-title">${translations['lblPerformanceChart'] || 'Leistungsverlauf'}</div>
+                            <div style="position: relative; height: 250px; width: 100%;">
+                                <canvas id="runnerPerformanceChart"></canvas>
+                            </div>
+                         </div>`;
             } else {
                 html += `<div style="color:var(--text-light); font-style:italic; font-size:0.9rem;">${translations['lblNoStatsAvailable'] || 'Keine regulären Laufzeiten für Grafiken vorhanden.'}</div>`;
             }
 
             statsPane.innerHTML = html;
+
+            // Chart.js Diagramm initialisieren, falls Daten vorhanden sind
+            if (validRuns.length > 0) {
+                const ctx = document.getElementById('runnerPerformanceChart').getContext('2d');
+                
+                // Altes Diagramm zerstören, um Überlappungen zu vermeiden
+                if (runnerChartInstance) {
+                    runnerChartInstance.destroy();
+                }
+
+                // Daten für das Diagramm aufbereiten
+                const labels = validRuns.map(r => r.event);
+                const dataPts = validRuns.map(r => r.timeMs); // Rohdaten in Millisekunden
+
+                // Farben aus Eurem CSS auslesen für nahtloses Design
+                const rootStyle = getComputedStyle(document.documentElement);
+                const primaryColor = rootStyle.getPropertyValue('--primary').trim() || '#3498db';
+                const textColor = rootStyle.getPropertyValue('--text-light').trim() || '#7f8c8d';
+                const gridColor = rootStyle.getPropertyValue('--border-color').trim() || '#e0e0e0';
+
+                runnerChartInstance = new Chart(ctx, {
+                    type: 'line', // Eine elegante Kurve
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Laufzeit',
+                            data: dataPts,
+                            borderColor: primaryColor,
+                            backgroundColor: primaryColor + '33', // 20% Transparenz für die Füllung unter der Kurve
+                            borderWidth: 2,
+                            pointBackgroundColor: primaryColor,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.3 // Sorgt für geschwungene (nicht kantige) Linien
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }, // Legende ausblenden, da es nur eine Linie gibt
+                            tooltip: {
+                                callbacks: {
+                                    // Zeigt im Tooltip die sauber formatierte Zeit an
+                                    label: function(context) {
+                                        return ' ' + formatTime(context.raw);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: {
+                                    color: textColor,
+                                    // Y-Achse: Millisekunden in Euer Zeitformat umwandeln
+                                    callback: function(value) {
+                                        return formatTime(value);
+                                    }
+                                },
+                                grid: { color: gridColor }
+                            },
+                            x: {
+                                ticks: { color: textColor },
+                                grid: { display: false } // Vertikale Gitterlinien ausblenden für einen cleanen Look
+                            }
+                        }
+                    }
+                });
+            }
         }
+
 
         function tryDeleteRunner(e, runnerName) {
             e.stopPropagation();

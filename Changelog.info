@@ -31,3 +31,4 @@
 1.36.5=Added Feature to Change Ranking Mode
 1.36.6=Fixed small issues
 2.0.0-pre.1=Added Runner Management
+2.0.0-pre.1.1=Switched to Chart.js for Stats
