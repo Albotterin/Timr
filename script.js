@@ -879,31 +879,42 @@
         function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
         function toggleEditTimeField() { document.getElementById('editTimeGroup').style.display = (document.getElementById('editStatus').value === "DNF" || document.getElementById('editStatus').value === "DNS") ? 'none' : 'flex'; }
         
-                function submitEditRun() {
+                        function submitEditRun() {
             const id = parseFloat(document.getElementById('editRunId').value); 
             const index = runs.findIndex(r => r.id === id); 
             if (index === -1) return;
             
-            // NEU: Den Namen in einer Variable speichern und in die DB aufnehmen (Migration)
-            const editedName = document.getElementById('editRunnerName').value.trim() || "Unbekannt";
-            if (editedName !== "Unbekannt") {
-                registerRunner(editedName);
+            const oldName = runs[index].name;
+            const newName = document.getElementById('editRunnerName').value.trim() || "Unbekannt";
+            
+            // NEU: Globale Umbenennung aufrufen, wenn der Name abweicht
+            if (oldName !== newName) {
+                renameRunnerGlobally(oldName, newName);
+            } else {
+                // Migration alter Läufer, auch wenn der Name nicht geändert wurde
+                registerRunner(newName);
             }
 
-            const stat = document.getElementById('editStatus').value; let timeMs = 0;
-            let pCount = parseInt(document.getElementById('editPenaltyCount').value, 10) || 0; let pTime = parseInt(document.getElementById('editPenaltyTime').value, 10) || 0;
-            let bCount = parseInt(document.getElementById('editBonusCount').value, 10) || 0; let bTime = parseInt(document.getElementById('editBonusTime').value, 10) || 0;
+            const stat = document.getElementById('editStatus').value; 
+            let timeMs = 0;
+            let pCount = parseInt(document.getElementById('editPenaltyCount').value, 10) || 0; 
+            let pTime = parseInt(document.getElementById('editPenaltyTime').value, 10) || 0;
+            let bCount = parseInt(document.getElementById('editBonusCount').value, 10) || 0; 
+            let bTime = parseInt(document.getElementById('editBonusTime').value, 10) || 0;
             
             if (stat !== "DNF" && stat !== "DNS") {
-                timeMs = (parseInt(document.getElementById('editHours').value, 10)||0)*3600000 + (parseInt(document.getElementById('editMinutes').value, 10)||0)*60000 + (parseInt(document.getElementById('editSeconds').value, 10)||0)*1000 + (parseInt(document.getElementById('editHundredths').value, 10)||0)*10;
+                timeMs = (parseInt(document.getElementById('editHours').value, 10)||0)*3600000 + 
+                         (parseInt(document.getElementById('editMinutes').value, 10)||0)*60000 + 
+                         (parseInt(document.getElementById('editSeconds').value, 10)||0)*1000 + 
+                         (parseInt(document.getElementById('editHundredths').value, 10)||0)*10;
             } else { 
                 pCount = 0; pTime = 0; bCount = 0; bTime = 0; 
             }
             
-            // HIER den bereits ausgelesenen 'editedName' verwenden
+            // Aktualisieren des spezifischen Laufs 
             runs[index] = { 
                 id: id, 
-                name: editedName, 
+                name: newName, 
                 status: stat, 
                 timeMs: timeMs, 
                 timeString: (stat==="DNF"||stat==="DNS") ? stat : formatTime(timeMs), 
@@ -916,6 +927,7 @@
             
             closeEditModal();
         }
+
 
         
 
@@ -1710,3 +1722,56 @@ function renameCurrentEvent() {
     }
 }
 
+        function renameRunnerGlobally(oldName, newName) {
+            const cleanOld = getCleanDisplayName(oldName);
+            const cleanNew = getCleanDisplayName(newName);
+
+            // 1. Aktuelles Event im Arbeitsspeicher aktualisieren
+            // (Falls der Läufer im aktuellen Event mehrmals gelaufen ist)
+            runs.forEach(r => {
+                if (getCleanDisplayName(r.name) === cleanOld) {
+                    r.name = newName;
+                }
+            });
+
+            // 2. Alle anderen Events im Archiv (localStorage) aktualisieren
+            eventList.forEach(ev => {
+                if (ev === currentEvent) return; // Bereits in 'runs' erledigt
+                
+                let evRuns = JSON.parse(localStorage.getItem(`runnerLeaderboard_${ev}`)) || [];
+                let changed = false;
+                evRuns.forEach(r => {
+                    if (getCleanDisplayName(r.name) === cleanOld) {
+                        r.name = newName;
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    localStorage.setItem(`runnerLeaderboard_${ev}`, JSON.stringify(evRuns));
+                }
+            });
+
+            // 3. Papierkorb aktualisieren (falls der Läufer dort gelöschte Einträge hat)
+            let trash = JSON.parse(localStorage.getItem('runnerTrash'));
+            if (trash && trash.runs) {
+                let trashChanged = false;
+                trash.runs.forEach(tr => {
+                    if (getCleanDisplayName(tr.runData.name) === cleanOld) {
+                        tr.runData.name = newName;
+                        trashChanged = true;
+                    }
+                });
+                if (trashChanged) {
+                    localStorage.setItem('runnerTrash', JSON.stringify(trash));
+                }
+            }
+
+            // 4. Läufer-Register (Statistik-DB) aktualisieren
+            runnerRegistry = runnerRegistry.filter(n => n !== cleanOld); // Alten Namen rauswerfen
+            if (!runnerRegistry.includes(cleanNew)) {
+                runnerRegistry.push(cleanNew); // Neuen Namen rein
+            }
+            runnerRegistry.sort((a, b) => a.localeCompare(b));
+            localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
+            updateRunnerDatalist();
+        }
