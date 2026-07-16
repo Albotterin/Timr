@@ -495,3 +495,61 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus { border-colo
     margin-bottom: 15px;
 }
 .stat-card-title { font-weight: bold; color: var(--primary); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+
+
+/* Custom Autocomplete / Läufer-Suche */
+.autocomplete-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 5px;
+}
+.autocomplete-wrapper input {
+    flex-grow: 1;
+}
+.btn-search-runner {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.btn-search-runner:hover {
+    background-color: var(--accent);
+}
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    margin-top: 4px;
+}
+.autocomplete-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text);
+}
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+.autocomplete-item:hover {
+    background-color: var(--item-hover);
+    color: var(--primary);
+    font-weight: bold;
+}

@@ -122,6 +122,8 @@
             buildEventSelectMenu(); loadRunsForCurrentEvent(); renderCustomButtons('penalty'); renderCustomButtons('bonus'); initTheme(); resetForm(); loadVersionInfo(); loadWhitelabelInfo();
             loadWatermark();
             checkUrlImport();
+            
+            updateRunnerDatalist();
         };
 
         window.onunload = function() { if (popupWindow) popupWindow.close(); };
@@ -1495,7 +1497,8 @@ function renameCurrentEvent() {
 
         
                 // --- LÄUFERVERWALTUNG & STATISTIKEN ---
-        let runnerRegistry = JSON.parse(localStorage.getItem('runnerRegistry')) || [];
+        let savedRegistry = JSON.parse(localStorage.getItem('runnerRegistry'));
+        let runnerRegistry = Array.isArray(savedRegistry) ? savedRegistry : [];
 
         function registerRunner(name) {
             if (!name) return;
@@ -1518,8 +1521,6 @@ function renameCurrentEvent() {
                 dl.appendChild(opt);
             });
         }
-        // Initiale Befüllung beim Start
-        updateRunnerDatalist();
 
         // -> WICHTIG: Erweitert Eure bestehende saveRun() Funktion!
         // Fügt dort direkt nach dem Auslesen des Namens "registerRunner(runnerName);" ein.
@@ -1812,3 +1813,59 @@ function renameCurrentEvent() {
             localStorage.setItem('runnerRegistry', JSON.stringify(runnerRegistry));
             updateRunnerDatalist();
         }
+
+        
+                // --- CUSTOM AUTOCOMPLETE / LUPEN-SUCHE ---
+        function toggleAutocomplete(inputId, dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            
+            // Wenn es schon offen ist, schließen
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                // Alle anderen eventuell offenen Fenster schließen
+                document.querySelectorAll('.autocomplete-dropdown').forEach(dd => dd.style.display = 'none');
+                
+                // Liste füllen und anzeigen
+                updateLiveAutocomplete(inputId, dropdownId, true);
+                dropdown.style.display = 'block';
+            }
+        }
+
+        function updateLiveAutocomplete(inputId, dropdownId, forceUpdate = false) {
+            const input = document.getElementById(inputId);
+            const dropdown = document.getElementById(dropdownId);
+            
+            // Nur updaten, wenn das Dropdown auch offen ist (oder wir es erzwingen)
+            if (dropdown.style.display !== 'block' && !forceUpdate) return;
+
+            const query = input.value.toLowerCase().trim();
+            dropdown.innerHTML = '';
+            
+            // Alle registrierten Läufer nach der Eingabe filtern
+            const matches = runnerRegistry.filter(name => name.toLowerCase().includes(query));
+            
+            if (matches.length === 0) {
+                dropdown.innerHTML = `<div class="autocomplete-item" style="color:var(--text-light); font-style:italic; cursor:default;">Keine Treffer</div>`;
+                return;
+            }
+
+            // Treffer als klickbare Elemente einfügen
+            matches.forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                div.innerText = name;
+                div.onclick = () => {
+                    input.value = name;
+                    dropdown.style.display = 'none'; // Fenster nach Auswahl schließen
+                };
+                dropdown.appendChild(div);
+            });
+        }
+
+        // Klick ins Leere schließt die Dropdowns
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.autocomplete-wrapper')) {
+                document.querySelectorAll('.autocomplete-dropdown').forEach(dd => dd.style.display = 'none');
+            }
+        });

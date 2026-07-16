@@ -137,8 +137,15 @@
             <div id="tabSingleContent" class="tab-content active">
                 <div class="form-group">
                     <label id="lblRunnerName" for="runnerName">Name des Läufers:</label>
-                                 <input type="text" id="runnerName" placeholder="Name..." autocomplete="off" list="registeredRunnersList">
-                <datalist id="registeredRunnersList"></datalist>
+         
+                    	
+                    <div class="autocomplete-wrapper">
+    <input type="text" id="runnerName" placeholder="Name..." autocomplete="off" oninput="updateLiveAutocomplete('runnerName', 'runnerDropdown')">
+    <button class="btn-search-runner" onclick="toggleAutocomplete('runnerName', 'runnerDropdown')" title="Läufer suchen">🔍</button>
+    <div id="runnerDropdown" class="autocomplete-dropdown"></div>
+</div>
+
+              
                 </div>
 
                 <div class="stopwatch-display" id="display">00:00:00.00</div>
@@ -180,8 +187,15 @@
                 <div class="form-group" id="groupSetupForm">
                     <label id="lblGroupRunnerAdd" for="groupRunnerInput">Läufer zur Gruppe hinzufügen:</label>
                     <div class="input-inline-group">
-                        <input type="text" id="groupRunnerInput" placeholder="Name eingeben...">
-                        <button id="lblGroupAddBtn" class="btn btn-start" style="padding: 0 20px;" onclick="addRunnerToGroup()">Hinzufügen</button>
+                      
+<div class="autocomplete-wrapper">
+    <input type="text" id="groupRunnerInput" placeholder="Name..." autocomplete="off" oninput="updateLiveAutocomplete('groupRunnerInput', 'groupDropdown')">
+    <button class="btn-search-runner" onclick="toggleAutocomplete('groupRunnerInput', 'groupDropdown')" title="Läufer suchen">🔍</button>
+    <div id="groupDropdown" class="autocomplete-dropdown"></div>
+</div>
+
+                    		
+                    	<button id="lblGroupAddBtn" class="btn btn-start" style="padding: 0 20px;" onclick="addRunnerToGroup()">Hinzufügen</button>
                     </div>
                 </div>
                 <div id="groupMassActionRow" style="display: none; margin-bottom: 15px;">
@@ -423,6 +437,7 @@
         </div>
     </div>
 
+    <datalist id="registeredRunnersList"></datalist>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
      <script src="script.js"></script>
